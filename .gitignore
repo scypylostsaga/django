@@ -26,3 +26,5 @@ env/
 db.sqlite3
 staticfiles/
 media/
+.vercel
+.env*
