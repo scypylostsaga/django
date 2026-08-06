@@ -1,0 +1,7 @@
+{
+  "name": "django-vercel-app",
+  "private": true,
+  "scripts": {
+    "dev": "bash ./dev.sh"
+  }
+}

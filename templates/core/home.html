@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Home &middot; Django on Vercel{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <p class="eyebrow">Starter template</p>
+    <h1>A Django project ready for Vercel</h1>
+    <p class="lede">
+        Server-rendered pages plus a REST API, backed by Neon Postgres.
+        Add a task below to see the database in action.
+    </p>
+</section>
+
+{% if not db_ready %}
+<div class="notice">
+    <strong>Database not migrated yet.</strong>
+    Run <code>python manage.py migrate</code> to create the tables.
+</div>
+{% endif %}
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Tasks</h2>
+        <span class="counter">{{ completed_count }} / {{ total_count }} done</span>
+    </div>
+
+    <form method="post" action="{% url 'home' %}" class="task-form">
+        {% csrf_token %}
+        <input type="text" name="title" placeholder="Task title" required maxlength="200" aria-label="Task title">
+        <input type="text" name="description" placeholder="Description (optional)" aria-label="Task description">
+        <button type="submit" class="btn btn-primary">Add task</button>
+    </form>
+
+    <ul class="task-list">
+        {% for task in tasks %}
+        <li class="task {% if task.completed %}task-done{% endif %}">
+            <div class="task-main">
+                <form method="post" action="{% url 'toggle_task' task.id %}" class="inline-form">
+                    {% csrf_token %}
+                    <button type="submit" class="checkbox" aria-label="Toggle completed">
+                        {% if task.completed %}&#10003;{% endif %}
+                    </button>
+                </form>
+                <div class="task-text">
+                    <span class="task-title">{{ task.title }}</span>
+                    {% if task.description %}<span class="task-desc">{{ task.description }}</span>{% endif %}
+                </div>
+            </div>
+            <form method="post" action="{% url 'delete_task' task.id %}" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost" aria-label="Delete task">Delete</button>
+            </form>
+        </li>
+        {% empty %}
+        <li class="empty">No tasks yet. Add your first one above.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section class="cards">
+    <article class="card">
+        <h3>REST API</h3>
+        <p>Browse the DRF-powered endpoints and try CRUD operations.</p>
+        <a href="/api/tasks/" class="link">Open /api/tasks/ &rarr;</a>
+    </article>
+    <article class="card">
+        <h3>Admin</h3>
+        <p>Manage records with Django's built-in admin interface.</p>
+        <a href="/admin/" class="link">Open /admin/ &rarr;</a>
+    </article>
+</section>
+{% endblock %}
