@@ -1,19 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "config/wsgi.py": {
-      "runtime": "python3.12"
+    "api/**/*.py": {
+      "excludeFiles": "{static/**,templates/**}"
     }
   },
-  "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "config/wsgi.py"
+      "dest": "api/index.py"
     }
   ]
 }
