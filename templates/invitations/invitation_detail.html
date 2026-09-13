@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block title %}{{ invitation.title }} — Inviqo{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8" x-data="{ copiedMsg: false }">
+    <!-- Back to Dashboard & Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-stone-200">
+        <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'invitations:dashboard' %}" class="text-xs font-semibold text-stone-500 hover:text-stone-800 flex items-center space-x-1">
+                    <span>&larr; Dashboard</span>
+                </a>
+                <span class="text-stone-300">/</span>
+                <span class="text-xs uppercase tracking-wider font-semibold text-amber-700">{{ invitation.get_event_type_display }}</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900">{{ invitation.title }}</h1>
+            <p class="text-xs text-stone-500">
+                Event Date: <strong class="text-stone-700">{{ invitation.event_date|date:"F j, Y, g:i a" }}</strong> &bull; Host: <strong class="text-stone-700">{{ invitation.hosts_or_celebrants }}</strong>
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{% url 'invitations:public_invitation' slug=invitation.slug %}" target="_blank" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-sm transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                <span>View Public Mobile Page</span>
+            </a>
+            <a href="{% url 'invitations:invitation_edit' slug=invitation.slug %}" class="px-3.5 py-2 rounded-xl border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold transition">
+                Edit Details
+            </a>
+            <form action="{% url 'invitations:invitation_delete' slug=invitation.slug %}" method="post" onsubmit="return confirm('Are you sure you want to delete this invitation? This cannot be undone.');" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live RSVP Stats Ribbon -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-stone-500 font-semibold">Total Guests</p>
+            <p class="text-3xl font-serif font-bold text-stone-900 mt-1">{{ guests.count }}</p>
+            <p class="text-[11px] text-stone-400 mt-0.5">Allocated on guest list</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-emerald-700 font-semibold">Attending</p>
+            <p class="text-3xl font-serif font-bold text-emerald-600 mt-1">{{ attending_count }} <span class="text-sm font-sans font-normal text-stone-500">({{ total_attending_pax }} Pax)</span></p>
+            <p class="text-[11px] text-emerald-600/80 mt-0.5">Confirmed headcount</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-rose-700 font-semibold">Unable to Attend</p>
+            <p class="text-3xl font-serif font-bold text-rose-600 mt-1">{{ declined_count }}</p>
+            <p class="text-[11px] text-rose-500/80 mt-0.5">Declined invitations</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
+            <p class="text-xs uppercase tracking-wider text-amber-700 font-semibold">Awaiting Response</p>
+            <p class="text-3xl font-serif font-bold text-amber-600 mt-1">{{ pending_count }}</p>
+            <p class="text-[11px] text-amber-600/80 mt-0.5">Pending confirmation</p>
+        </div>
+    </div>
+
+    <!-- Quick Public Link & WhatsApp Share Helper -->
+    <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="space-y-1">
+            <h3 class="text-sm font-bold text-amber-900">General Public Link</h3>
+            <p class="text-xs text-amber-800 font-mono select-all">{{ base_url }}</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button 
+                @click="navigator.clipboard.writeText('{{ base_url }}'); copiedMsg = true; setTimeout(() => copiedMsg = false, 2500)" 
+                type="button" 
+                class="px-4 py-2 rounded-xl bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-semibold shadow-sm transition"
+            >
+                <span x-text="copiedMsg ? 'Link Copied!' : 'Copy General Link'"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- LEFT 2 COLUMNS: GUESTS & SCHEDULES -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- SECTION 1: GUEST LIST & PERSONALIZED LINKS -->
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-stone-200 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-stone-900">Guests & Personalized Invitations</h2>
+                        <p class="text-xs text-stone-500">Each guest receives their personalized greeting card and RSVP link.</p>
+                    </div>
+                </div>
+
+                <!-- Add Guest Inline Form -->
+                <div class="p-5 bg-stone-50/80 border-b border-stone-200">
+                    <form action="{% url 'invitations:guest_add' slug=invitation.slug %}" method="post" class="flex flex-col sm:flex-row gap-3">
+                        {% csrf_token %}
+                        <div class="flex-1">
+                            <input type="text" name="name" required placeholder="Guest or Family Name (e.g. Rachel & Mike)" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div class="w-full sm:w-36">
+                            <input type="text" name="phone" placeholder="Phone (Optional)" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div class="w-full sm:w-24">
+                            <input type="number" name="max_pax" min="1" value="1" placeholder="Max Pax" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white" title="Allocated seats">
+                        </div>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-stone-900 hover:bg-black text-white text-xs font-semibold transition whitespace-nowrap">
+                            + Add Guest
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Guest Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-stone-700">
+                        <thead class="bg-stone-50 text-[11px] uppercase tracking-wider text-stone-500 font-semibold border-b border-stone-200">
+                            <tr>
+                                <th class="p-4">Guest Name</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Pax</th>
+                                <th class="p-4">Personal Link</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-stone-100">
+                            {% for g in guests %}
+                            <tr class="hover:bg-stone-50/60 transition">
+                                <td class="p-4 font-semibold text-stone-900">
+                                    {{ g.name }}
+                                    {% if g.notes %}<p class="text-[11px] text-stone-400 font-normal mt-0.5">&ldquo;{{ g.notes }}&rdquo;</p>{% endif %}
+                                </td>
+                                <td class="p-4">
+                                    {% if g.is_attending is True %}
+                                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">Attending</span>
+                                    {% elif g.is_attending is False %}
+                                    <span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">Declined</span>
+                                    {% else %}
+                                    <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium text-[10px]">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4 text-stone-600">
+                                    {% if g.is_attending %}{{ g.actual_pax }}{% else %}-{% endif %} / {{ g.max_pax }}
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button 
+                                            @click="navigator.clipboard.writeText('{{ base_url }}?to={{ g.name|urlencode }}'); alert('Copied invite link for {{ g.name|escapejs }}')" 
+                                            class="text-amber-700 hover:text-amber-900 underline font-medium text-[11px]"
+                                        >
+                                            Copy Link
+                                        </button>
+                                        <a 
+                                            href="https://wa.me/{% if g.phone %}{{ g.phone|slugify }}{% endif %}?text=Dear%20{{ g.name|urlencode }}%2C%20you%20are%20cordially%20invited%20to%20our%20celebration%20{{ invitation.title|urlencode }}.%20Please%20open%20your%20invitation%20here%3A%20{{ base_url }}%3Fto%3D{{ g.name|urlencode }}" 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            class="text-emerald-600 hover:text-emerald-700 font-medium text-[11px] inline-flex items-center space-x-0.5"
+                                            title="Send via WhatsApp"
+                                        >
+                                            <span>WhatsApp &nearr;</span>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right">
+                                    <form action="{% url 'invitations:guest_delete' slug=invitation.slug guest_id=g.id %}" method="post" onsubmit="return confirm('Remove guest {{ g.name|escapejs }}?')" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-stone-400 hover:text-rose-600 transition" title="Delete Guest">
+                                            &times;
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="p-6 text-center text-stone-400 text-xs">
+                                    No guests added yet. Use the form above to add your guests!
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            <!-- SECTION 2: PHOTO GALLERY & MEMORIES -->
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-stone-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h2 class="text-base font-bold text-stone-900">Photo Gallery & Memories ({{ gallery_photos.count }})</h2>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                {{ invitation.get_gallery_effect_display }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-stone-500">Upload photos and choose your preferred motion & display effect.</p>
+                    </div>
+
+                    <!-- Quick Gallery Effect Switcher -->
+                    <form action="{% url 'invitations:gallery_effect_update' slug=invitation.slug %}" method="post" class="flex flex-wrap items-center gap-1.5 bg-stone-50 p-1.5 rounded-xl border border-stone-200">
+                        {% csrf_token %}
+                        <span class="text-[11px] font-semibold text-stone-500 pl-1 mr-1">Effect:</span>
+                        
+                        <button type="submit" name="gallery_effect" value="grid" 
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if invitation.gallery_effect == 'grid' %}bg-amber-700 text-white shadow-sm{% else %}text-stone-600 hover:bg-white hover:text-stone-900{% endif %}" title="Classic 2-Col Grid">
+                            Grid
+                        </button>
+                        <button type="submit" name="gallery_effect" value="slide" 
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if invitation.gallery_effect == 'slide' %}bg-amber-700 text-white shadow-sm{% else %}text-stone-600 hover:bg-white hover:text-stone-900{% endif %}" title="Smooth Horizontal Touch Slider">
+                            Slide
+                        </button>
+                        <button type="submit" name="gallery_effect" value="carousel" 
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if invitation.gallery_effect == 'carousel' %}bg-amber-700 text-white shadow-sm{% else %}text-stone-600 hover:bg-white hover:text-stone-900{% endif %}" title="Featured Slideshow with Indicators">
+                            Carousel
+                        </button>
+                        <button type="submit" name="gallery_effect" value="move" 
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if invitation.gallery_effect == 'move' %}bg-amber-700 text-white shadow-sm{% else %}text-stone-600 hover:bg-white hover:text-stone-900{% endif %}" title="Continuous Infinite Auto-Scrolling Marquee">
+                            Move (Marquee)
+                        </button>
+                        <button type="submit" name="gallery_effect" value="fade" 
+                            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if invitation.gallery_effect == 'fade' %}bg-amber-700 text-white shadow-sm{% else %}text-stone-600 hover:bg-white hover:text-stone-900{% endif %}" title="Cinematic Crossfade Deck">
+                            Fade
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Add Photo Form -->
+                <div class="p-5 bg-stone-50/80 border-b border-stone-200">
+                    <form action="{% url 'invitations:gallery_photo_add' slug=invitation.slug %}" method="post" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-end gap-3">
+                        {% csrf_token %}
+                        <div class="flex-1 w-full">
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-1">Choose Photo (PNG/JPG)</label>
+                            <input type="file" name="image" required accept="image/*" class="w-full text-xs text-stone-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-200 file:text-stone-800 hover:file:bg-stone-300 cursor-pointer">
+                        </div>
+                        <div class="w-full sm:w-56">
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-1">Caption (Optional)</label>
+                            <input type="text" name="caption" placeholder="e.g. Engagement in Paris" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <button type="submit" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold transition whitespace-nowrap">
+                            + Upload Photo
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Gallery Photos Grid -->
+                <div class="p-5">
+                    {% if gallery_photos %}
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {% for photo in gallery_photos %}
+                        <div class="group relative rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-square flex flex-col justify-end">
+                            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Gallery Image' }}" class="absolute inset-0 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-2">
+                                <div class="flex justify-end">
+                                    <form action="{% url 'invitations:gallery_photo_delete' slug=invitation.slug photo_id=photo.id %}" method="post" onsubmit="return confirm('Delete this photo?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow hover:bg-rose-700" title="Delete Photo">
+                                            &times;
+                                        </button>
+                                    </form>
+                                </div>
+                                {% if photo.caption %}
+                                <p class="text-[11px] text-white font-medium truncate">{{ photo.caption }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-center text-stone-400 text-xs py-4">No gallery photos uploaded yet. Add photos of the couple or celebrants above!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- SECTION 3: EVENT SCHEDULES -->
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-stone-200 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-stone-900">Event Agenda & Schedule</h2>
+                        <p class="text-xs text-stone-500">Add timeline blocks (Ceremony, Reception, Dinner, After-party).</p>
+                    </div>
+                </div>
+
+                <!-- Add Schedule Form with Auto Google Maps Builder & Wedding Presets -->
+                <div 
+                    x-data="{
+                        title: '',
+                        startTime: '{{ invitation.event_date|date:"Y-m-d\TH:i" }}',
+                        endTime: '',
+                        venueName: '{{ invitation.venue_summary|default:""|escapejs }}',
+                        address: '',
+                        mapUrl: '',
+                        dressCode: '',
+
+                        generateMapsUrl() {
+                            const query = (this.venueName + ' ' + this.address).trim();
+                            if (query) {
+                                this.mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+                            }
+                        },
+
+                        prefillCeremony() {
+                            this.title = 'Holy Matrimony & Ceremony';
+                            this.dressCode = 'Formal / Sacred Attire';
+                            this.generateMapsUrl();
+                        },
+
+                        prefillReception() {
+                            this.title = 'Wedding Reception & Dinner';
+                            this.dressCode = 'Evening Elegance / Formal';
+                            this.generateMapsUrl();
+                        }
+                    }"
+                    class="p-5 bg-stone-50/80 border-b border-stone-200 space-y-4"
+                >
+                    <!-- Quick Presets for Weddings & Events -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">Quick Presets:</span>
+                        <button 
+                            type="button" 
+                            @click="prefillCeremony()" 
+                            class="px-3 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-semibold hover:bg-amber-100 shadow-sm transition flex items-center space-x-1"
+                        >
+                            <span>💍</span>
+                            <span>Ceremony / Matrimony</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="prefillReception()" 
+                            class="px-3 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-semibold hover:bg-amber-100 shadow-sm transition flex items-center space-x-1"
+                        >
+                            <span>🥂</span>
+                            <span>Reception / Dinner</span>
+                        </button>
+                    </div>
+
+                    <form action="{% url 'invitations:schedule_add' slug=invitation.slug %}" method="post" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% csrf_token %}
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">Session / Event Title *</label>
+                            <input type="text" name="title" x-model="title" required placeholder="e.g. Holy Matrimony, Dinner Reception, After Party" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">Start Date & Time *</label>
+                            <input type="datetime-local" name="start_time" x-model="startTime" required class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">End Date & Time (Optional)</label>
+                            <input type="datetime-local" name="end_time" x-model="endTime" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">Venue / Building Name *</label>
+                            <input type="text" name="venue_name" x-model="venueName" @input="generateMapsUrl()" required placeholder="e.g. The Cliffside Chapel, The Glass House" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">Dress Code (Optional)</label>
+                            <input type="text" name="dress_code" x-model="dressCode" placeholder="e.g. Formal, Neutral or Pastel shades" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[10px] uppercase font-semibold text-stone-500 mb-0.5">Street Address / City (Optional)</label>
+                            <input type="text" name="address" x-model="address" @input="generateMapsUrl()" placeholder="e.g. Jl. Pantai Suluban No. 88, Uluwatu, Bali 80361" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-600 bg-white">
+                        </div>
+
+                        <!-- Smart Google Maps Link Builder Bar -->
+                        <div class="sm:col-span-2 p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-xs">📍</span>
+                                    <label class="text-xs font-bold text-amber-900">Auto Google Maps Directions Link</label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button 
+                                        type="button" 
+                                        @click="generateMapsUrl()" 
+                                        class="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 text-[11px] font-semibold transition shadow-xs"
+                                    >
+                                        Auto-Generate from Venue
+                                    </button>
+                                    <a 
+                                        x-show="mapUrl" 
+                                        :href="mapUrl" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        class="text-emerald-700 hover:text-emerald-800 text-[11px] font-semibold inline-flex items-center space-x-1"
+                                    >
+                                        <span>Test Map Pin &nearr;</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <input 
+                                type="url" 
+                                name="map_url" 
+                                x-model="mapUrl" 
+                                placeholder="Auto-generated: https://www.google.com/maps/search/?api=1&query=..." 
+                                class="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs font-mono text-stone-800 focus:ring-2 focus:ring-amber-600 bg-white"
+                            >
+                            <p class="text-[10px] text-amber-800/80">
+                                💡 Inviqo automatically synchronizes this link as you type your venue and address. If left blank, it will automatically be generated upon saving!
+                            </p>
+                        </div>
+
+                        <div class="sm:col-span-2 flex justify-end pt-2">
+                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-sm transition">
+                                + Add Agenda Item
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Schedule List -->
+                <div class="divide-y divide-stone-100">
+                    {% for s in schedules %}
+                    <div class="p-4 flex items-center justify-between hover:bg-stone-50/60 transition">
+                        <div class="space-y-0.5">
+                            <h4 class="font-bold text-stone-900 text-sm">{{ s.title }}</h4>
+                            <p class="text-xs text-stone-600">{{ s.start_time|date:"M j, Y — h:i A" }} at <strong>{{ s.venue_name }}</strong></p>
+                            {% if s.dress_code %}<p class="text-[11px] text-stone-500">Dress code: {{ s.dress_code }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <form action="{% url 'invitations:schedule_delete' slug=invitation.slug schedule_id=s.id %}" method="post" onsubmit="return confirm('Delete this schedule block?')" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 text-stone-400 hover:text-rose-600 text-xs transition">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-stone-400">
+                        No schedules added yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT 1 COLUMN: WISHES & GUESTBOOK -->
+        <div class="space-y-8">
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+                <div class="p-5 border-b border-stone-200">
+                    <h2 class="text-base font-bold text-stone-900">Guestbook Wishes ({{ wishes.count }})</h2>
+                    <p class="text-xs text-stone-500">Live messages from your guests.</p>
+                </div>
+
+                <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+                    {% for w in wishes %}
+                    <div class="p-3.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-stone-900">{{ w.sender_name }}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-medium {% if w.attendance_status == 'attending' %}bg-emerald-100 text-emerald-800{% else %}bg-stone-200 text-stone-700{% endif %}">
+                                {{ w.get_attendance_status_display }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-stone-700 leading-relaxed">&ldquo;{{ w.message }}&rdquo;</p>
+                        <p class="text-[10px] text-stone-400">{{ w.created_at|date:"M j, g:i A" }}</p>
+                    </div>
+                    {% empty %}
+                    <div class="p-6 text-center text-xs text-stone-400">
+                        No wishes submitted yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

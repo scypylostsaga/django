@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="darkGoldStem" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="45%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <linearGradient id="darkGoldEnv" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#FEF08A" />
+    </linearGradient>
+
+    <linearGradient id="darkSparkle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="40%" stop-color="#FDE68A" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+
+    <linearGradient id="darkIconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#292524" />
+      <stop offset="100%" stop-color="#1C1917" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Icon Mark -->
+  <g transform="translate(10, 8)">
+    <rect x="0" y="0" width="84" height="84" rx="20" fill="url(#darkIconBg)" stroke="#78350F" stroke-width="1.2" />
+
+    <g transform="translate(-14, -14) scale(0.92)">
+      <!-- Envelope lines -->
+      <path d="M30 52 L56 68 C59 70 63 70 66 68 L74 63" 
+            stroke="url(#darkGoldEnv)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+      
+      <path d="M30 52 C30 48 33 45 37 44 L60 36 C63 35 67 36 69 39 L76 49" 
+            stroke="url(#darkGoldEnv)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" />
+
+      <path d="M30 53 L33 79 C33.5 82 36.5 84 40 84 L72 84" 
+            stroke="url(#darkGoldEnv)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+
+      <!-- Stylized 'I' Stem -->
+      <path d="M68 88 H87 C86 85 84.5 84 82 84 L82 52 C82 45 84 42 87 40 C83 40 78 41 75 43 L75 84 C72 84 70 85 68 88 Z"
+            fill="url(#darkGoldStem)" />
+
+      <!-- Sparkle Stars -->
+      <path d="M83 23 C83 27 86 29 90 29 C86 29 83 32 83 36 C83 32 80 29 76 29 C80 29 83 27 83 23 Z" 
+            fill="url(#darkSparkle)" />
+      <path d="M94 17 C94 19 95.5 20.5 97.5 20.5 C95.5 20.5 94 22 94 24 C94 22 92.5 20.5 90.5 20.5 C92.5 20.5 94 19 94 17 Z" 
+            fill="#FDE68A" />
+    </g>
+  </g>
+
+  <!-- Typography: INVIQO in crisp bright warm white -->
+  <text x="115" y="58" 
+        font-family="'Playfair Display', 'Cinzel', 'Georgia', serif" 
+        font-size="44" 
+        font-weight="700" 
+        letter-spacing="3" 
+        fill="#FAFAF9">INVIQO</text>
+
+  <!-- Tagline: DIGITAL INVITATIONS in shimmering warm gold -->
+  <text x="118" y="78" 
+        font-family="'Plus Jakarta Sans', 'Montserrat', 'Segoe UI', sans-serif" 
+        font-size="11.5" 
+        font-weight="600" 
+        letter-spacing="5.5" 
+        fill="#F59E0B">DIGITAL INVITATIONS</text>
+
+  <circle cx="395" cy="52" r="3.5" fill="url(#darkGoldStem)" />
+</svg>

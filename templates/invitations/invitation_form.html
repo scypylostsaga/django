@@ -1,0 +1,934 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — Inviqo{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+    <div class="border-b border-stone-200 pb-4">
+        <a href="{% url 'invitations:dashboard' %}" class="text-xs font-semibold text-stone-500 hover:text-stone-800 flex items-center space-x-1 mb-2">
+            <span>&larr; Back to Dashboard</span>
+        </a>
+        <h1 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900">{{ title }}</h1>
+        <p class="text-xs text-stone-500 mt-1">Configure event details, theme styling, background music, and digital envelope.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 sm:p-8 space-y-6">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1">
+            <p class="font-bold">Please correct the following errors:</p>
+            {{ form.errors }}
+        </div>
+        {% endif %}
+
+        <!-- Section 1: Event Fundamentals -->
+        <div class="space-y-4">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-amber-800 border-b border-stone-100 pb-2">1. Event Basics</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Invitation Title *</label>
+                    {{ form.title }}
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Event Category *</label>
+                    {{ form.event_type }}
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">URL Slug (e.g. sarah-and-alex)</label>
+                    {{ form.slug }}
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Couple, Celebrant, or Host Names *</label>
+                    {{ form.hosts_or_celebrants }}
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Main Event Date & Time *</label>
+                    {{ form.event_date }}
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Venue Summary (City / Location)</label>
+                    {{ form.venue_summary }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Look & Media -->
+        <div class="space-y-4 pt-4 border-t border-stone-100">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-amber-800 border-b border-stone-100 pb-2">2. Look & Media</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Cover Photo & Interactive ROI Focal Point Selector -->
+                <div 
+                    x-data="{
+                        focusPos: '{{ form.cover_focus_position.value|default:'center' }}',
+                        zoomLevel: {{ form.cover_zoom_level.value|default:100 }},
+                        previewSrc: '{% if invitation and invitation.get_cover_image_url %}{{ invitation.get_cover_image_url }}{% elif form.cover_image_url.value %}{{ form.cover_image_url.value }}{% else %}https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80{% endif %}',
+                        urlInput: '{{ form.cover_image_url.value|default:'' }}',
+                        crosshairX: 50,
+                        crosshairY: 50,
+
+                        init() {
+                            this.parseFocusPos();
+                        },
+
+                        parseFocusPos() {
+                            if (this.focusPos === 'center') { this.crosshairX = 50; this.crosshairY = 50; }
+                            else if (this.focusPos === 'top') { this.crosshairX = 50; this.crosshairY = 20; }
+                            else if (this.focusPos === 'bottom') { this.crosshairX = 50; this.crosshairY = 80; }
+                            else if (this.focusPos.includes('%')) {
+                                const parts = this.focusPos.split(' ');
+                                if (parts.length >= 2) {
+                                    this.crosshairX = parseFloat(parts[0]) || 50;
+                                    this.crosshairY = parseFloat(parts[1]) || 50;
+                                }
+                            }
+                        },
+
+                        setFocus(pos, x, y) {
+                            this.focusPos = pos;
+                            this.crosshairX = x;
+                            this.crosshairY = y;
+                        },
+
+                        setZoom(val) {
+                            this.zoomLevel = Math.max(100, Math.min(val, 250));
+                        },
+
+                        clickCanvas(e) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                            const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+                            this.crosshairX = x;
+                            this.crosshairY = y;
+                            this.focusPos = x + '% ' + y + '%';
+                        },
+
+                        previewFile(e) {
+                            const file = e.target.files[0];
+                            if (file) {
+                                this.previewSrc = URL.createObjectURL(file);
+                            }
+                        },
+
+                        onUrlInput(val) {
+                            this.urlInput = val;
+                            if (val && (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/'))) {
+                                this.previewSrc = val;
+                            }
+                        }
+                    }"
+                    class="sm:col-span-2 p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-4"
+                >
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-stone-800 uppercase tracking-wide">
+                            Cover Photo, Region of Interest (ROI) & Zoom
+                        </label>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full" x-text="'ROI: ' + focusPos"></span>
+                            <span class="text-[11px] font-semibold text-stone-700 bg-stone-200/80 px-2 py-0.5 rounded-full font-mono" x-text="(zoomLevel / 100).toFixed(2) + 'x'"></span>
+                        </div>
+                    </div>
+
+                    <!-- File & URL Inputs -->
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="block text-xs font-medium text-stone-600">Upload Photo (JPG / PNG):</span>
+                                {% if invitation and invitation.cover_image %}
+                                <span class="text-[11px] text-emerald-700 font-medium">✓ Uploaded file saved</span>
+                                {% endif %}
+                            </div>
+                            <input type="file" name="cover_image" accept="image/*" @change="previewFile($event)" class="form-file-input">
+                            {% if form.cover_image.errors %}
+                                <p class="text-xs text-rose-600 mt-1 font-semibold">{{ form.cover_image.errors.0 }}</p>
+                            {% endif %}
+                            {% if invitation and invitation.cover_image %}
+                            <div class="flex items-center space-x-2 mt-1.5">
+                                <label for="cover_image-clear_id" class="text-xs text-stone-500 flex items-center space-x-1.5 cursor-pointer">
+                                    <input type="checkbox" name="cover_image-clear" id="cover_image-clear_id" class="rounded border-stone-300 text-amber-700 focus:ring-amber-500">
+                                    <span>Clear current uploaded image file (use URL below instead)</span>
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="pt-2 border-t border-stone-200/60">
+                            <span class="block text-xs font-medium text-stone-600 mb-1">Or provide an external Image URL:</span>
+                            <input 
+                                type="url" 
+                                name="cover_image_url" 
+                                :value="urlInput" 
+                                @input="onUrlInput($event.target.value)" 
+                                placeholder="https://images.unsplash.com/... (optional)" 
+                                class="form-input"
+                            >
+                            {% if form.cover_image_url.errors %}
+                                <p class="text-xs text-rose-600 mt-1 font-semibold">{{ form.cover_image_url.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-[11px] text-stone-400 mt-1">If an image file is uploaded above, it will take precedence over the URL.</p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive ROI Canvas, Zoom Controls & Live Mobile Crop Preview -->
+                    <div class="pt-3 border-t border-stone-200 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div>
+                                <p class="text-xs font-bold text-stone-900">Select Focal Point / ROI & Zoom</p>
+                                <p class="text-[11px] text-stone-500">Click directly on the photo below to place the focus target on faces or important subjects.</p>
+                            </div>
+                            <input type="hidden" name="cover_focus_position" :value="focusPos">
+                            <input type="hidden" name="cover_zoom_level" :value="zoomLevel">
+                        </div>
+
+                        <!-- Focal Position Presets Bar -->
+                        <div class="flex flex-wrap gap-1.5">
+                            <button 
+                                type="button" 
+                                @click="setFocus('50% 20%', 50, 20)" 
+                                :class="crosshairY <= 30 ? 'bg-amber-700 text-white border-amber-700' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'"
+                                class="px-2.5 py-1 rounded-lg border text-xs font-medium transition flex items-center space-x-1"
+                            >
+                                <span>👤</span>
+                                <span>Top (Faces/Portraits)</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="setFocus('50% 50%', 50, 50)" 
+                                :class="crosshairY > 30 && crosshairY < 70 ? 'bg-amber-700 text-white border-amber-700' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'"
+                                class="px-2.5 py-1 rounded-lg border text-xs font-medium transition"
+                            >
+                                🎯 Center (Default)
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="setFocus('50% 80%', 50, 80)" 
+                                :class="crosshairY >= 70 ? 'bg-amber-700 text-white border-amber-700' : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'"
+                                class="px-2.5 py-1 rounded-lg border text-xs font-medium transition"
+                            >
+                                ⚓ Bottom
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="setFocus('20% 20%', 20, 20)" 
+                                class="px-2 py-1 rounded-lg border bg-white hover:bg-stone-100 text-stone-700 text-xs transition"
+                            >
+                                ↖ Top-Left
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="setFocus('80% 20%', 80, 20)" 
+                                class="px-2 py-1 rounded-lg border bg-white hover:bg-stone-100 text-stone-700 text-xs transition"
+                            >
+                                ↗ Top-Right
+                            </button>
+                        </div>
+
+                        <!-- Zoom Scale Slider & Presets -->
+                        <div class="bg-stone-100/90 p-3 rounded-xl border border-stone-200 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-stone-700">🔍 Cover Zoom & Framing Scale</span>
+                                    <span class="text-[11px] font-mono font-bold text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded" x-text="(zoomLevel / 100).toFixed(2) + 'x (' + zoomLevel + '%)'"></span>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(100)" 
+                                    x-show="zoomLevel !== 100" 
+                                    class="text-[11px] text-stone-500 hover:text-stone-800 underline font-medium"
+                                >
+                                    Reset to 1.0x (Fit)
+                                </button>
+                            </div>
+
+                            <div class="flex items-center space-x-3">
+                                <span class="text-[11px] text-stone-500 font-medium">1.0x</span>
+                                <input 
+                                    type="range" 
+                                    min="100" 
+                                    max="220" 
+                                    step="5" 
+                                    x-model.number="zoomLevel" 
+                                    class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-700"
+                                >
+                                <span class="text-[11px] text-stone-500 font-medium">2.2x</span>
+                            </div>
+
+                            <!-- Quick Zoom Presets -->
+                            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                <span class="text-[10px] uppercase font-bold text-stone-400 mr-1">Presets:</span>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(100)" 
+                                    :class="zoomLevel === 100 ? 'bg-amber-700 text-white font-bold' : 'bg-white text-stone-600 hover:bg-stone-50'"
+                                    class="px-2 py-0.5 rounded border border-stone-200 text-[10px] transition"
+                                >
+                                    1.0x Fit
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(125)" 
+                                    :class="zoomLevel === 125 ? 'bg-amber-700 text-white font-bold' : 'bg-white text-stone-600 hover:bg-stone-50'"
+                                    class="px-2 py-0.5 rounded border border-stone-200 text-[10px] transition"
+                                >
+                                    1.25x Medium
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(150)" 
+                                    :class="zoomLevel === 150 ? 'bg-amber-700 text-white font-bold' : 'bg-white text-stone-600 hover:bg-stone-50'"
+                                    class="px-2 py-0.5 rounded border border-stone-200 text-[10px] transition"
+                                >
+                                    1.5x Close-up
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(180)" 
+                                    :class="zoomLevel === 180 ? 'bg-amber-700 text-white font-bold' : 'bg-white text-stone-600 hover:bg-stone-50'"
+                                    class="px-2 py-0.5 rounded border border-stone-200 text-[10px] transition"
+                                >
+                                    1.8x Portrait
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="setZoom(200)" 
+                                    :class="zoomLevel === 200 ? 'bg-amber-700 text-white font-bold' : 'bg-white text-stone-600 hover:bg-stone-50'"
+                                    class="px-2 py-0.5 rounded border border-stone-200 text-[10px] transition"
+                                >
+                                    2.0x Detail
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2-Column: Clickable Photo Canvas (Left) & Live Mobile Simulation (Right) -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start pt-2">
+                            <!-- Left 3 Cols: Clickable Canvas -->
+                            <div class="md:col-span-3 space-y-1">
+                                <div 
+                                    @click="clickCanvas($event)" 
+                                    class="relative rounded-xl overflow-hidden border-2 border-stone-300 cursor-crosshair bg-stone-900 group select-none shadow-inner aspect-[16/9]"
+                                >
+                                    <img :src="previewSrc" alt="Cover Preview" class="w-full h-full object-cover select-none pointer-events-none">
+                                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition pointer-events-none"></div>
+
+                                    <!-- Focal Crosshair Pin -->
+                                    <div 
+                                        class="absolute w-8 h-8 -ml-4 -mt-4 pointer-events-none flex items-center justify-center transition-all duration-150"
+                                        :style="'left: ' + crosshairX + '%; top: ' + crosshairY + '%;'"
+                                    >
+                                        <div class="w-8 h-8 rounded-full border-2 border-amber-400 bg-amber-500/30 flex items-center justify-center animate-pulse shadow-lg shadow-black/50">
+                                            <div class="w-2 h-2 rounded-full bg-amber-400"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-stone-400 flex items-center justify-between">
+                                    <span>👆 Click anywhere on the image to place the focal point.</span>
+                                    <span class="font-mono text-stone-600 font-semibold" x-text="'Target: ' + crosshairX + '%, ' + crosshairY + '%'"></span>
+                                </p>
+                            </div>
+
+                            <!-- Right 1 Col: Mobile Hero Screen Simulation -->
+                            <div class="space-y-1 text-center">
+                                <div class="flex items-center justify-between px-1">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Mobile View</p>
+                                    <span x-show="zoomLevel > 100" class="text-[9px] font-bold text-amber-700" x-text="(zoomLevel / 100).toFixed(2) + 'x'"></span>
+                                </div>
+                                <div class="w-28 mx-auto aspect-[9/16] rounded-xl overflow-hidden border-2 border-stone-800 bg-black shadow-md relative">
+                                    <img 
+                                        :src="previewSrc" 
+                                        alt="Mobile View Simulation" 
+                                        class="w-full h-full object-cover transition-all duration-300"
+                                        :style="'object-position: ' + focusPos + '; transform: scale(' + (zoomLevel / 100) + '); transform-origin: ' + focusPos + ';'"
+                                    >
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2 pointer-events-none">
+                                        <span class="text-[8px] text-amber-200 font-bold uppercase">Mobile Screen</span>
+                                    </div>
+                                </div>
+                                <p class="text-[9px] text-stone-400">Live 9:16 scaled framing</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2 p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-3">
+                    <label class="block text-xs font-bold text-stone-800 uppercase tracking-wide">Background Music (Audio)</label>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="block text-xs font-medium text-stone-600">Upload Song File (MP3):</span>
+                            {% if invitation and invitation.audio_file %}
+                            <span class="text-[11px] text-emerald-700 font-medium">✓ Audio file saved</span>
+                            {% endif %}
+                        </div>
+                        {{ form.audio_file }}
+                        {% if form.audio_file.errors %}
+                            <p class="text-xs text-rose-600 mt-1 font-semibold">{{ form.audio_file.errors.0 }}</p>
+                        {% endif %}
+                        {% if invitation and invitation.audio_file %}
+                        <div class="flex items-center space-x-2 mt-1.5">
+                            <label for="audio_file-clear_id" class="text-xs text-stone-500 flex items-center space-x-1.5 cursor-pointer">
+                                <input type="checkbox" name="audio_file-clear" id="audio_file-clear_id" class="rounded border-stone-300 text-amber-700 focus:ring-amber-500">
+                                <span>Clear current audio file</span>
+                            </label>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="pt-2 border-t border-stone-200/60">
+                        <span class="block text-xs font-medium text-stone-600 mb-1">Or provide an external Audio URL:</span>
+                        {{ form.audio_url }}
+                        {% if form.audio_url.errors %}
+                            <p class="text-xs text-rose-600 mt-1 font-semibold">{{ form.audio_url.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-[11px] text-stone-400 mt-1">Plays automatically in the background when guests tap "Open Invitation".</p>
+                    </div>
+                </div>
+
+                <!-- Theme, Palette & Typography Studio -->
+                <div 
+                    class="sm:col-span-2 space-y-6 pt-4 border-t border-stone-200/80"
+                    x-data="{
+                        themeColor: '{{ form.theme_color.value|default:'#b45309' }}',
+                        fontFamily: '{{ form.font_family.value|default:'serif' }}',
+                        themeStyle: '{{ form.theme_style.value|default:'classic' }}',
+                        palettes: [
+                            { name: 'Champagne Gold', hex: '#b45309' },
+                            { name: 'Rose Gold / Blush', hex: '#be185d' },
+                            { name: 'Sage Garden', hex: '#15803d' },
+                            { name: 'Royal Navy', hex: '#1e3a8a' },
+                            { name: 'Velvet Plum', hex: '#7e22ce' },
+                            { name: 'Terracotta Rust', hex: '#c2410c' },
+                            { name: 'Dusty Slate', hex: '#334155' },
+                            { name: 'Emerald Forest', hex: '#047857' },
+                            { name: 'Berry Burgundy', hex: '#881337' },
+                            { name: 'Midnight Onyx', hex: '#0f172a' }
+                        ],
+                        fontStyles: [
+                            { id: 'serif', name: 'Playfair Display', family: 'font-serif', preview: 'The Wedding Celebration', style: 'Timeless Editorial Serif' },
+                            { id: 'cormorant', name: 'Cormorant Garamond', family: 'font-cormorant', preview: 'Together with our families', style: 'Royal Elegance Serif' },
+                            { id: 'cinzel', name: 'Cinzel Decorative', family: 'font-cinzel', preview: 'HONOR OF YOUR PRESENCE', style: 'Grand Classical Roman' },
+                            { id: 'greatvibes', name: 'Great Vibes', family: 'font-greatvibes', preview: 'Save Our Special Date', style: 'Romantic Script' },
+                            { id: 'lora', name: 'Lora', family: 'font-lora', preview: 'Request the pleasure of your company', style: 'Poetic Modern Serif' },
+                            { id: 'sans', name: 'Plus Jakarta Sans', family: 'font-sans', preview: 'Save the Date & Join Us', style: 'Clean Modern Sans' },
+                            { id: 'montserrat', name: 'Montserrat', family: 'font-montserrat', preview: 'WE ARE GETTING MARRIED', style: 'Contemporary Bold' }
+                        ],
+                        themeStyles: [
+                            { 
+                                id: 'classic', 
+                                name: 'Classic Ivory', 
+                                desc: 'Warm ivory background with subtle gilded borders and warm paper glow', 
+                                previewBg: '#faf8f5', 
+                                previewCard: '#ffffff', 
+                                previewBorder: '#e7e5e4',
+                                previewText: '#1c1917', 
+                                previewSubtext: '#78716c',
+                                badgeBg: '#f5f5f4',
+                                badgeBorder: '#e7e5e4',
+                                badgeText: '#44403c',
+                                icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
+                            },
+                            { 
+                                id: 'dark', 
+                                name: 'Midnight Luxe', 
+                                desc: 'Dramatic dark obsidian backdrop with shimmering metallic accents', 
+                                previewBg: '#0c0a09', 
+                                previewCard: '#1c1917', 
+                                previewBorder: '#292524',
+                                previewText: '#fafaf9', 
+                                previewSubtext: '#a8a29e',
+                                badgeBg: '#292524',
+                                badgeBorder: '#44403c',
+                                badgeText: '#f5f5f4',
+                                icon: 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z'
+                            },
+                            { 
+                                id: 'romantic', 
+                                name: 'Blush Petal', 
+                                desc: 'Soft petal blush tones, ethereal glass cards and romantic pastels', 
+                                previewBg: '#fff5f7', 
+                                previewCard: '#ffffff', 
+                                previewBorder: '#fce7f3',
+                                previewText: '#4a044e', 
+                                previewSubtext: '#9d174d',
+                                badgeBg: '#fdf2f8',
+                                badgeBorder: '#fbcfe8',
+                                badgeText: '#be185d',
+                                icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'
+                            },
+                            { 
+                                id: 'botanical', 
+                                name: 'Garden Olive', 
+                                desc: 'Earthy olive, botanical mist, and natural foliage aesthetic', 
+                                previewBg: '#f4f7f4', 
+                                previewCard: '#ffffff', 
+                                previewBorder: '#d1fae5',
+                                previewText: '#064e3b', 
+                                previewSubtext: '#047857',
+                                badgeBg: '#ecfdf5',
+                                badgeBorder: '#a7f3d0',
+                                badgeText: '#065f46',
+                                icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
+                            },
+                            { 
+                                id: 'minimal', 
+                                name: 'Pure Minimal', 
+                                desc: 'Clean high-contrast gallery aesthetic with ultra-crisp modern lines', 
+                                previewBg: '#ffffff', 
+                                previewCard: '#fafaf9', 
+                                previewBorder: '#e7e5e4',
+                                previewText: '#09090b', 
+                                previewSubtext: '#52525b',
+                                badgeBg: '#f4f4f5',
+                                badgeBorder: '#e4e4e7',
+                                badgeText: '#18181b',
+                                icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
+                            }
+                        ],
+                        get currentTheme() {
+                            return this.themeStyles.find(t => t.id === this.themeStyle) || this.themeStyles[0];
+                        },
+                        get currentFontClass() {
+                            const f = this.fontStyles.find(item => item.id === this.fontFamily);
+                            return f ? f.family : 'font-serif';
+                        }
+                    }"
+                >
+                    <!-- Hidden Form Inputs for Django Form Submission -->
+                    <input type="hidden" name="theme_color" :value="themeColor">
+                    <input type="hidden" name="font_family" :value="fontFamily">
+                    <input type="hidden" name="theme_style" :value="themeStyle">
+
+                    {% if form.theme_color.errors %}
+                        <p class="text-xs text-rose-600 font-semibold">{{ form.theme_color.errors.0 }}</p>
+                    {% endif %}
+                    {% if form.font_family.errors %}
+                        <p class="text-xs text-rose-600 font-semibold">{{ form.font_family.errors.0 }}</p>
+                    {% endif %}
+                    {% if form.theme_style.errors %}
+                        <p class="text-xs text-rose-600 font-semibold">{{ form.theme_style.errors.0 }}</p>
+                    {% endif %}
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center space-x-1.5">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                                </svg>
+                                <span>Theme Styling & Aesthetics</span>
+                            </h3>
+                            <p class="text-[11px] text-stone-500 mt-0.5">Customize your invitation vibe with curated palettes, typography, and card aesthetics.</p>
+                        </div>
+                    </div>
+
+                    <!-- 1. Theme Aesthetic Styles -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-stone-700">Aesthetic Preset Style</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                            <template x-for="style in themeStyles" :key="style.id">
+                                <button
+                                    type="button"
+                                    @click="themeStyle = style.id"
+                                    :class="themeStyle === style.id ? 'border-amber-600 ring-2 ring-amber-500/30 bg-amber-50/20' : 'border-stone-200 hover:border-stone-300 bg-white'"
+                                    class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between relative group"
+                                >
+                                    <div class="flex items-center justify-between w-full mb-2">
+                                        <span class="w-6 h-6 rounded-lg flex items-center justify-center text-xs" :style="`background-color: ${style.previewBg}; border: 1px solid ${style.previewBorder}; color: ${style.previewText};`">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="style.icon"/>
+                                            </svg>
+                                        </span>
+                                        <template x-if="themeStyle === style.id">
+                                            <span class="w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center">
+                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-stone-900" x-text="style.name"></p>
+                                        <p class="text-[10px] text-stone-500 mt-0.5 line-clamp-2" x-text="style.desc"></p>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 2. Curated Color Palettes & Custom Hex Picker -->
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-semibold text-stone-700">Accent Color Palette</label>
+                            <span class="text-[11px] font-mono text-stone-500" x-text="themeColor"></span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <template x-for="palette in palettes" :key="palette.hex">
+                                <button
+                                    type="button"
+                                    @click="themeColor = palette.hex"
+                                    :title="palette.name"
+                                    :style="`background-color: ${palette.hex}`"
+                                    :class="themeColor.toLowerCase() === palette.hex.toLowerCase() ? 'ring-2 ring-offset-2 ring-amber-600 scale-110 shadow-sm' : 'hover:scale-105 opacity-90 hover:opacity-100'"
+                                    class="w-8 h-8 rounded-full transition-all flex items-center justify-center"
+                                >
+                                    <template x-if="themeColor.toLowerCase() === palette.hex.toLowerCase()">
+                                        <svg class="w-4 h-4 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </template>
+                                </button>
+                            </template>
+
+                            <!-- Custom Color Picker -->
+                            <div class="flex items-center space-x-1.5 pl-2 border-l border-stone-200">
+                                <div class="relative w-8 h-8 rounded-full overflow-hidden border border-stone-300 shadow-inner flex items-center justify-center cursor-pointer hover:border-stone-400">
+                                    <input 
+                                        type="color" 
+                                        x-model="themeColor" 
+                                        class="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
+                                        title="Pick custom color"
+                                    />
+                                    <span class="w-full h-full rounded-full" :style="`background-color: ${themeColor}`"></span>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    x-model="themeColor" 
+                                    maxlength="7"
+                                    placeholder="#b45309"
+                                    class="w-24 px-2 py-1 text-xs font-mono rounded-lg border border-stone-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Typography Styles -->
+                    <div class="space-y-2 pt-2">
+                        <label class="block text-xs font-semibold text-stone-700">Typography & Headline Font</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            <template x-for="font in fontStyles" :key="font.id">
+                                <button
+                                    type="button"
+                                    @click="fontFamily = font.id"
+                                    :class="fontFamily === font.id ? 'border-amber-600 ring-2 ring-amber-500/30 bg-amber-50/20' : 'border-stone-200 hover:border-stone-300 bg-white'"
+                                    class="text-left p-3 rounded-xl border transition-all flex flex-col justify-between"
+                                >
+                                    <div class="flex items-center justify-between w-full mb-1">
+                                        <span class="text-xs font-bold text-stone-900" x-text="font.name"></span>
+                                        <span class="text-[10px] uppercase tracking-wider text-stone-400 font-semibold" x-text="font.style"></span>
+                                    </div>
+                                    <p 
+                                        :class="font.family" 
+                                        class="text-lg text-stone-800 my-1 line-clamp-1"
+                                        x-text="font.preview"
+                                    ></p>
+                                    <div class="flex items-center justify-between mt-1 pt-1 border-t border-stone-100">
+                                        <span class="text-[10px] text-stone-400" x-text="`Key: ${font.id}`"></span>
+                                        <template x-if="fontFamily === font.id">
+                                            <span class="text-[11px] font-semibold text-amber-700 flex items-center space-x-1">
+                                                <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                                <span>Active</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 4. Interactive Live Theme Mini-Preview -->
+                    <div class="pt-2">
+                        <label class="block text-xs font-semibold text-stone-700 mb-1.5">Live Style Simulation</label>
+                        <div 
+                            class="rounded-2xl p-5 border transition-all duration-300 overflow-hidden relative shadow-inner"
+                            :style="`background-color: ${currentTheme.previewBg}; border-color: ${currentTheme.previewBorder};`"
+                        >
+                            <!-- Mini Card Content -->
+                            <div 
+                                class="max-w-md mx-auto rounded-xl p-4 border transition-all duration-300 shadow-sm space-y-3"
+                                :style="`background-color: ${currentTheme.previewCard}; border-color: ${currentTheme.previewBorder}; color: ${currentTheme.previewText};`"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <span 
+                                        class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border transition-colors"
+                                        :style="`background-color: ${themeColor}15; color: ${themeColor}; border-color: ${themeColor}40;`"
+                                        x-text="currentTheme.name"
+                                    ></span>
+                                    <span class="text-[11px]" :style="`color: ${currentTheme.previewSubtext};`">Sunday, July 7, 2027</span>
+                                </div>
+
+                                <div class="text-center py-1">
+                                    <p class="text-[11px] uppercase tracking-widest" :style="`color: ${currentTheme.previewSubtext};`">The Wedding of</p>
+                                    <h4 
+                                        :class="currentFontClass"
+                                        class="text-2xl font-bold tracking-tight my-1"
+                                        :style="`color: ${currentTheme.previewText};`"
+                                    >
+                                        Sarah & Alex Rivera
+                                    </h4>
+                                    <div class="w-12 h-0.5 mx-auto rounded-full my-1.5" :style="`background-color: ${themeColor};`"></div>
+                                    <p class="text-xs italic" :style="`color: ${currentTheme.previewSubtext};`">
+                                        "Two souls with but a single thought, two hearts that beat as one."
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center space-x-2 pt-1">
+                                    <button
+                                        type="button"
+                                        :style="`background-color: ${themeColor};`"
+                                        class="flex-1 py-2 px-3 rounded-lg text-white text-xs font-semibold shadow-sm text-center transition filter hover:brightness-110"
+                                    >
+                                        Open Invitation
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :style="`border-color: ${themeColor}60; color: ${currentTheme.previewText};`"
+                                        class="py-2 px-3 rounded-lg border text-xs font-medium text-center"
+                                    >
+                                        RSVP Attending
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2.5: Photo Gallery Display & Motion Effect Selector -->
+                <div 
+                    class="sm:col-span-2 p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-4"
+                    x-data="{
+                        galleryEffect: '{{ form.gallery_effect.value|default:'grid' }}',
+                        simIndex: 0,
+                        simAutoplay: true,
+                        effects: [
+                            {
+                                id: 'grid',
+                                name: 'Classic Grid',
+                                badge: '2-Col Masonry',
+                                icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
+                                desc: 'Clean high-contrast grid with zoom on hover and full-screen lightbox modal.'
+                            },
+                            {
+                                id: 'slide',
+                                name: 'Smooth Slide',
+                                badge: 'Horizontal Scroll',
+                                icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+                                desc: 'Touch-swipe horizontal filmstrip with smooth card snapping and arrow navigation.'
+                            },
+                            {
+                                id: 'carousel',
+                                name: 'Featured Carousel',
+                                badge: 'Slideshow Deck',
+                                icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+                                desc: 'Single-photo spotlight with slide counter (e.g. 2 / 5), indicator dots, and autoplay controls.'
+                            },
+                            {
+                                id: 'move',
+                                name: 'Continuous Move',
+                                badge: 'Auto Marquee',
+                                icon: 'M13 10V3L4 14h7v7l9-11h-7z',
+                                desc: 'Perpetual fluid auto-scrolling motion that gently glides photos across the screen; pauses on touch.'
+                            },
+                            {
+                                id: 'fade',
+                                name: 'Cinematic Fade',
+                                badge: 'Crossfade Deck',
+                                icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
+                                desc: 'Soft crossfade dissolutions between photos with ambient progress bar and captions.'
+                            }
+                        ]
+                    }"
+                >
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-900 flex items-center space-x-1.5">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Photo Gallery Display & Motion Effect</span>
+                            </h3>
+                            <p class="text-[11px] text-stone-500 mt-0.5">Select how guests will view your uploaded gallery moments on mobile & desktop.</p>
+                        </div>
+                        <span class="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full capitalize" x-text="'Active: ' + galleryEffect"></span>
+                    </div>
+
+                    <input type="hidden" name="gallery_effect" :value="galleryEffect">
+                    {% if form.gallery_effect.errors %}
+                        <p class="text-xs text-rose-600 font-semibold">{{ form.gallery_effect.errors.0 }}</p>
+                    {% endif %}
+
+                    <!-- Effect Selection Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="eff in effects" :key="eff.id">
+                            <button
+                                type="button"
+                                @click="galleryEffect = eff.id"
+                                :class="galleryEffect === eff.id ? 'border-amber-600 ring-2 ring-amber-500/30 bg-amber-50/40' : 'border-stone-200 hover:border-stone-300 bg-white'"
+                                class="text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between relative group"
+                            >
+                                <div class="flex items-center justify-between w-full mb-2">
+                                    <span class="w-7 h-7 rounded-lg flex items-center justify-center text-amber-700 bg-amber-100/70 border border-amber-200/50">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="eff.icon"/>
+                                        </svg>
+                                    </span>
+                                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-stone-100 text-stone-600" x-text="eff.badge"></span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center space-x-1.5">
+                                        <p class="text-xs font-bold text-stone-900" x-text="eff.name"></p>
+                                        <template x-if="galleryEffect === eff.id">
+                                            <span class="w-3.5 h-3.5 rounded-full bg-amber-600 text-white inline-flex items-center justify-center">
+                                                <svg class="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[11px] text-stone-500 leading-relaxed" x-text="eff.desc"></p>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Live Effect Simulation Sandbox -->
+                    <div class="pt-3 border-t border-stone-200/80">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-stone-700">Previewing Selected Effect:</span>
+                            <span class="text-[11px] font-mono text-stone-500" x-text="'Mode: ' + galleryEffect"></span>
+                        </div>
+
+                        <!-- 1. Grid Preview -->
+                        <div x-show="galleryEffect === 'grid'" class="bg-white p-3 rounded-xl border border-stone-200">
+                            <p class="text-[11px] text-stone-400 mb-2">Interactive 2-column masonry grid layout with lightbox:</p>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="aspect-[4/5] rounded-lg bg-amber-100 flex items-center justify-center text-[10px] text-amber-800 font-semibold shadow-sm border border-amber-200">Photo 1</div>
+                                <div class="aspect-[4/5] rounded-lg bg-stone-200 flex items-center justify-center text-[10px] text-stone-700 font-semibold shadow-sm border border-stone-300">Photo 2</div>
+                                <div class="aspect-[4/5] rounded-lg bg-amber-50 flex items-center justify-center text-[10px] text-amber-700 font-semibold shadow-sm border border-amber-200">Photo 3</div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Slide Preview -->
+                        <div x-show="galleryEffect === 'slide'" class="bg-white p-3 rounded-xl border border-stone-200 space-y-2">
+                            <p class="text-[11px] text-stone-400">Horizontal touch swipeable filmstrip with snapping:</p>
+                            <div class="flex gap-2 overflow-x-auto pb-1">
+                                <div class="shrink-0 w-28 aspect-[4/5] rounded-lg bg-amber-100 flex items-center justify-center text-[10px] text-amber-800 font-semibold border border-amber-200">Slide 1</div>
+                                <div class="shrink-0 w-28 aspect-[4/5] rounded-lg bg-stone-200 flex items-center justify-center text-[10px] text-stone-700 font-semibold border border-stone-300">Slide 2</div>
+                                <div class="shrink-0 w-28 aspect-[4/5] rounded-lg bg-amber-50 flex items-center justify-center text-[10px] text-amber-700 font-semibold border border-amber-200">Slide 3</div>
+                                <div class="shrink-0 w-28 aspect-[4/5] rounded-lg bg-stone-100 flex items-center justify-center text-[10px] text-stone-600 font-semibold border border-stone-200">Slide 4 &rarr;</div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Carousel Preview -->
+                        <div x-show="galleryEffect === 'carousel'" class="bg-white p-3 rounded-xl border border-stone-200 text-center space-y-2">
+                            <div class="flex items-center justify-between text-[11px] text-stone-500">
+                                <span>Featured Carousel</span>
+                                <span class="bg-stone-100 px-2 py-0.5 rounded font-mono font-bold text-amber-800">2 of 5</span>
+                            </div>
+                            <div class="relative max-w-xs mx-auto aspect-[16/9] rounded-xl bg-gradient-to-tr from-amber-700 to-amber-500 text-white flex items-center justify-center text-xs font-bold shadow">
+                                <span>Spotlight Photo</span>
+                                <div class="absolute inset-x-2 flex justify-between">
+                                    <span class="w-6 h-6 rounded-full bg-black/30 flex items-center justify-center text-xs">&larr;</span>
+                                    <span class="w-6 h-6 rounded-full bg-black/30 flex items-center justify-center text-xs">&rarr;</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Continuous Move (Marquee) Preview -->
+                        <div x-show="galleryEffect === 'move'" class="bg-white p-3 rounded-xl border border-stone-200 overflow-hidden">
+                            <p class="text-[11px] text-stone-400 mb-1.5">Infinite flowing auto-marquee filmstrip (glides constantly, pauses on hover):</p>
+                            <div class="relative overflow-hidden w-full h-16 rounded-lg bg-stone-100 flex items-center">
+                                <div class="flex gap-2 animate-pulse">
+                                    <div class="w-16 h-12 rounded bg-amber-200 flex items-center justify-center text-[9px] font-bold text-amber-900 shrink-0">Photo 1</div>
+                                    <div class="w-16 h-12 rounded bg-stone-300 flex items-center justify-center text-[9px] font-bold text-stone-800 shrink-0">Photo 2</div>
+                                    <div class="w-16 h-12 rounded bg-amber-300 flex items-center justify-center text-[9px] font-bold text-amber-900 shrink-0">Photo 3</div>
+                                    <div class="w-16 h-12 rounded bg-stone-200 flex items-center justify-center text-[9px] font-bold text-stone-700 shrink-0">Photo 4</div>
+                                    <div class="w-16 h-12 rounded bg-amber-100 flex items-center justify-center text-[9px] font-bold text-amber-800 shrink-0">Photo 5</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Cinematic Fade Preview -->
+                        <div x-show="galleryEffect === 'fade'" class="bg-white p-3 rounded-xl border border-stone-200 text-center space-y-2">
+                            <p class="text-[11px] text-stone-400">Cinematic crossfade deck with subtle zoom and progress dots:</p>
+                            <div class="relative max-w-xs mx-auto aspect-[16/9] rounded-xl bg-stone-900 text-amber-200 flex items-center justify-center text-xs font-serif italic shadow-inner">
+                                <span>"Elegance in every memory" &bull; Crossfade</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Opening Quote or Welcome Verse</label>
+                    {{ form.welcome_quote }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Digital Envelope / Gift Details -->
+        <div class="space-y-4 pt-4 border-t border-stone-100">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-amber-800 border-b border-stone-100 pb-2">3. Digital Gift / Angpao (Optional)</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Bank / Wallet Name</label>
+                    {{ form.gift_bank_name }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Account Number</label>
+                    {{ form.gift_account_number }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Account Holder Name</label>
+                    {{ form.gift_account_name }}
+                </div>
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Gift Note</label>
+                    {{ form.gift_note }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Publishing -->
+        <div class="pt-4 border-t border-stone-100 flex items-center space-x-2">
+            {{ form.is_published }}
+            <label class="text-xs font-semibold text-stone-700">Publish this invitation immediately</label>
+        </div>
+
+        <div class="pt-4 flex items-center justify-end space-x-3">
+            <a href="{% url 'invitations:dashboard' %}" class="px-4 py-2.5 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-50 text-xs font-semibold transition">Cancel</a>
+            <button type="submit" class="px-6 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-sm transition">
+                Save & Continue &rarr;
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 0.6rem 0.85rem;
+        border-radius: 0.75rem;
+        border: 1px solid #d6d3d1;
+        font-size: 0.8125rem;
+        background-color: #fafaf9;
+        transition: all 0.15s ease-in-out;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: #b45309;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.2);
+    }
+    .form-checkbox {
+        width: 1.1rem;
+        height: 1.1rem;
+        border-radius: 0.35rem;
+        border: 1px solid #d6d3d1;
+        accent-color: #b45309;
+    }
+</style>
+{% endblock %}

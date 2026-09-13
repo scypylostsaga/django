@@ -1,73 +1,135 @@
 {% extends "base.html" %}
 
-{% block title %}Home &middot; Django on Vercel{% endblock %}
+{% block title %}Inviqo — Create Modern Digital Invitations for Any Event{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <p class="eyebrow">Starter template</p>
-    <h1>A Django project ready for Vercel</h1>
-    <p class="lede">
-        Server-rendered pages plus a REST API, backed by Neon Postgres.
-        Add a task below to see the database in action.
-    </p>
-</section>
+<div class="space-y-16 py-8 sm:py-16">
+    <!-- Hero Section -->
+    <section class="max-w-4xl mx-auto px-4 text-center space-y-6">
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
+            <span>The Modern SaaS Digital Invitation Platform</span>
+        </div>
 
-{% if not db_ready %}
-<div class="notice">
-    <strong>Database not migrated yet.</strong>
-    Run <code>python manage.py migrate</code> to create the tables.
-</div>
-{% endif %}
+        <h1 class="text-4xl sm:text-6xl font-serif font-bold text-stone-900 tracking-tight leading-[1.15]">
+            Design & Share Unforgettable <br class="hidden sm:inline">
+            <span class="text-amber-700 italic">Digital Invitations</span> in Minutes
+        </h1>
 
-<section class="panel">
-    <div class="panel-head">
-        <h2>Tasks</h2>
-        <span class="counter">{{ completed_count }} / {{ total_count }} done</span>
-    </div>
+        <p class="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
+            Create stunning, mobile-first web invitations for weddings, birthdays, baby showers, and celebrations. Complete with opening envelopes, audio, real-time RSVP, guestbook, and WhatsApp rich preview cards.
+        </p>
 
-    <form method="post" action="{% url 'home' %}" class="task-form">
-        {% csrf_token %}
-        <input type="text" name="title" placeholder="Task title" required maxlength="200" aria-label="Task title">
-        <input type="text" name="description" placeholder="Description (optional)" aria-label="Task description">
-        <button type="submit" class="btn btn-primary">Add task</button>
-    </form>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            {% if user.is_authenticated %}
+            <a href="{% url 'invitations:dashboard' %}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-md transition">
+                Go to Dashboard &rarr;
+            </a>
+            {% else %}
+            <a href="{% url 'invitations:signup' %}" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-md transition">
+                Start Creating Free &rarr;
+            </a>
+            {% endif %}
+            
+            <a href="/invite/sarah-and-alex/?to=Honored+Guest" target="_blank" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 font-semibold text-sm shadow-sm transition">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <span>Preview Demo Invitation &nearr;</span>
+            </a>
+        </div>
+    </section>
 
-    <ul class="task-list">
-        {% for task in tasks %}
-        <li class="task {% if task.completed %}task-done{% endif %}">
-            <div class="task-main">
-                <form method="post" action="{% url 'toggle_task' task.id %}" class="inline-form">
-                    {% csrf_token %}
-                    <button type="submit" class="checkbox" aria-label="Toggle completed">
-                        {% if task.completed %}&#10003;{% endif %}
-                    </button>
-                </form>
-                <div class="task-text">
-                    <span class="task-title">{{ task.title }}</span>
-                    {% if task.description %}<span class="task-desc">{{ task.description }}</span>{% endif %}
+    <!-- Feature Grid -->
+    <section class="max-w-5xl mx-auto px-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 1 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    📱
                 </div>
+                <h3 class="font-bold text-stone-900 text-base">Mobile-First Experience</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Over 95% of guests open invitations on mobile phones. Inviqo is tailored to look like a native luxury mobile app.
+                </p>
             </div>
-            <form method="post" action="{% url 'delete_task' task.id %}" class="inline-form">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-ghost" aria-label="Delete task">Delete</button>
-            </form>
-        </li>
-        {% empty %}
-        <li class="empty">No tasks yet. Add your first one above.</li>
-        {% endfor %}
-    </ul>
-</section>
 
-<section class="cards">
-    <article class="card">
-        <h3>REST API</h3>
-        <p>Browse the DRF-powered endpoints and try CRUD operations.</p>
-        <a href="/api/tasks/" class="link">Open /api/tasks/ &rarr;</a>
-    </article>
-    <article class="card">
-        <h3>Admin</h3>
-        <p>Manage records with Django's built-in admin interface.</p>
-        <a href="/admin/" class="link">Open /admin/ &rarr;</a>
-    </article>
-</section>
+            <!-- 2 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    💬
+                </div>
+                <h3 class="font-bold text-stone-900 text-base">WhatsApp & SEO Ready</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Automated OpenGraph metadata creates rich social link cards when you share invitations on WhatsApp, iMessage, and Telegram.
+                </p>
+            </div>
+
+            <!-- 3 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    ✉️
+                </div>
+                <h3 class="font-bold text-stone-900 text-base">Envelope & Background Music</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Delight guests with an opening cover envelope, personalized greeting, and smooth background romantic or upbeat melodies.
+                </p>
+            </div>
+
+            <!-- 4 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    📊
+                </div>
+                <h3 class="font-bold text-stone-900 text-base">Real-time RSVP Tracking</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Guests confirm attendance and headcounts with 1 tap. Track live stats and attendee numbers on your creator dashboard.
+                </p>
+            </div>
+
+            <!-- 5 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    💌
+                </div>
+                <h3 class="font-bold text-stone-900 text-base">Live Guestbook Wall</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Guests leave heartfelt wishes, congratulations, and prayers directly on the invitation page in real-time.
+                </p>
+            </div>
+
+            <!-- 6 -->
+            <div class="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm space-y-2.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    🎁
+                </div>
+                <h3 class="font-bold text-stone-900 text-base">Digital Envelope / Registry</h3>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Allow guests to easily send digital gifts and tokens of appreciation via 1-click copy bank and e-wallet details.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Invitation Showcase Banner -->
+    <section class="max-w-4xl mx-auto px-4">
+        <div class="bg-gradient-to-r from-stone-900 to-stone-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-8 border border-stone-700">
+            <div class="space-y-3 text-center sm:text-left">
+                <span class="text-xs uppercase font-semibold tracking-widest text-amber-300">Live Interactive Showcase</span>
+                <h2 class="text-2xl sm:text-3xl font-serif font-bold text-amber-50">Sarah & Alex's Wedding</h2>
+                <p class="text-xs sm:text-sm text-stone-300 max-w-md">
+                    Experience the full mobile-first flow: the opening envelope, background music, countdown timer, agenda, RSVP form, and guestbook wall.
+                </p>
+            </div>
+            <div>
+                <a href="/invite/sarah-and-alex/?to=John+Doe" target="_blank" class="inline-flex items-center space-x-2 px-6 py-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow-lg transition">
+                    <span>Open Live Demo</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}

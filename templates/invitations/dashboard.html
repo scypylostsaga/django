@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Inviqo Digital Invitations{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-stone-200">
+        <div>
+            <h1 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900">Creator Dashboard</h1>
+            <p class="text-sm text-stone-500 mt-1">Manage all your digital invitations, guest responses, and links.</p>
+        </div>
+        <a href="{% url 'invitations:invitation_create' %}" class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-sm shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>Create New Invitation</span>
+        </a>
+    </div>
+
+    <!-- Invitations Grid -->
+    <div class="space-y-4">
+        <h2 class="text-lg font-bold text-stone-800">Your Invitations ({{ invitations.count }})</h2>
+
+        {% if invitations %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for invite in invitations %}
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
+                <!-- Cover Banner -->
+                <div class="relative h-40 bg-stone-900 overflow-hidden">
+                    <img src="{{ invite.get_cover_image_url }}" alt="{{ invite.title }}" style="object-position: {{ invite.cover_focus_position|default:'center' }};" class="w-full h-full object-cover opacity-80">
+                    <div class="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+                        <span class="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20">
+                            {{ invite.get_event_type_display }}
+                        </span>
+                        <span class="text-xs text-stone-300">
+                            {{ invite.event_date|date:"M j, Y" }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                        <h3 class="font-serif font-bold text-lg text-stone-900 leading-snug">
+                            {{ invite.title }}
+                        </h3>
+                        <p class="text-xs text-stone-500 mt-1">
+                            Host: <strong class="text-stone-700">{{ invite.hosts_or_celebrants }}</strong>
+                        </p>
+                    </div>
+
+                    <!-- Mini Stats -->
+                    <div class="grid grid-cols-3 gap-2 py-3 border-y border-stone-100 text-center text-xs">
+                        <div>
+                            <div class="font-bold text-stone-900 text-sm">{{ invite.total_guests }}</div>
+                            <div class="text-[10px] text-stone-400 uppercase">Invited</div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-emerald-600 text-sm">{{ invite.attending_guests }}</div>
+                            <div class="text-[10px] text-stone-400 uppercase">Attending</div>
+                        </div>
+                        <div>
+                            <div class="font-bold text-amber-600 text-sm">{{ invite.total_wishes }}</div>
+                            <div class="text-[10px] text-stone-400 uppercase">Wishes</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center space-x-2 pt-1">
+                        <a href="{% url 'invitations:invitation_detail' slug=invite.slug %}" class="flex-1 text-center py-2 px-3 rounded-lg bg-stone-900 hover:bg-black text-white text-xs font-semibold transition">
+                            Manage Guests & RSVP
+                        </a>
+                        <a href="{% url 'invitations:public_invitation' slug=invite.slug %}" target="_blank" class="p-2 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-50 transition" title="Preview Public Mobile Page">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-white rounded-2xl border border-stone-200 p-12 text-center space-y-4">
+            <div class="w-14 h-14 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-base font-semibold text-stone-900">No invitations created yet</h3>
+                <p class="text-xs text-stone-500 max-w-sm mx-auto">Get started by creating your first wedding, birthday, or celebration invitation in seconds.</p>
+            </div>
+            <a href="{% url 'invitations:invitation_create' %}" class="inline-flex items-center px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-sm transition">
+                + Create Your First Invitation
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

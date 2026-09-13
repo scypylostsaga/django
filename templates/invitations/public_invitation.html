@@ -1,0 +1,1460 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-stone-900 text-stone-800 antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Primary SEO & Social Graph Meta Tags -->
+    <title>{{ invitation.title }}</title>
+    <meta name="title" content="{{ invitation.title }}">
+    <meta name="description" content="{{ og_description }}">
+
+    <!-- Open Graph / WhatsApp / Facebook / Telegram -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ current_url }}">
+    <meta property="og:title" content="{{ invitation.title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    {% if invitation.get_cover_image_url %}
+    <meta property="og:image" content="{{ invitation.get_cover_image_url }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    {% endif %}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ current_url }}">
+    <meta name="twitter:title" content="{{ invitation.title }}">
+    <meta name="twitter:description" content="{{ og_description }}">
+    {% if invitation.get_cover_image_url %}
+    <meta name="twitter:image" content="{{ invitation.get_cover_image_url }}">
+    {% endif %}
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Lora:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        accent: '{{ invitation.theme_color|default:"#b45309" }}',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        serif: ['Playfair Display', 'Georgia', 'serif'],
+                        cormorant: ['Cormorant Garamond', 'serif'],
+                        cinzel: ['Cinzel', 'serif'],
+                        greatvibes: ['Great Vibes', 'cursive'],
+                        lora: ['Lora', 'serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 8s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        :root {
+            --accent-color: {{ invitation.theme_color|default:"#b45309" }};
+            --accent-glow: {{ invitation.theme_color|default:"#b45309" }}33;
+            --accent-soft: {{ invitation.theme_color|default:"#b45309" }}18;
+            --accent-border: {{ invitation.theme_color|default:"#b45309" }}44;
+        }
+        .font-theme-header {
+            font-family: {% if invitation.font_family == 'cormorant' %}'Cormorant Garamond', serif{% elif invitation.font_family == 'cinzel' %}'Cinzel', serif{% elif invitation.font_family == 'greatvibes' %}'Great Vibes', cursive{% elif invitation.font_family == 'lora' %}'Lora', serif{% elif invitation.font_family == 'sans' %}'Plus Jakarta Sans', sans-serif{% elif invitation.font_family == 'montserrat' %}'Montserrat', sans-serif{% else %}'Playfair Display', serif{% endif %};
+        }
+        .theme-btn-primary {
+            background-color: var(--accent-color) !important;
+            color: #ffffff !important;
+            transition: all 0.2s;
+        }
+        .theme-btn-primary:hover {
+            filter: brightness(1.12);
+        }
+        .theme-badge {
+            background-color: var(--accent-soft) !important;
+            color: var(--accent-color) !important;
+            border: 1px solid var(--accent-border) !important;
+        }
+        .theme-text-accent {
+            color: var(--accent-color) !important;
+        }
+        .theme-border-accent {
+            border-color: var(--accent-color) !important;
+        }
+        .theme-bg-accent {
+            background-color: var(--accent-color) !important;
+        }
+
+        /* Theme Styles (Card Aesthetic) */
+        .theme-dark .theme-card {
+            background-color: #1c1917 !important;
+            border-color: #292524 !important;
+            color: #f5f5f4 !important;
+        }
+        .theme-dark .theme-section-title {
+            color: #ffffff !important;
+        }
+        .theme-dark .theme-subcard {
+            background-color: #292524 !important;
+            border-color: #44403c !important;
+            color: #fafaf9 !important;
+        }
+        .theme-dark .theme-subtext {
+            color: #a8a29e !important;
+        }
+        .theme-dark .theme-input {
+            background-color: #1c1917 !important;
+            border-color: #3f3f46 !important;
+            color: #f4f4f5 !important;
+        }
+
+        .theme-romantic .theme-card {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            border-color: #fce7f3 !important;
+        }
+        .theme-botanical .theme-card {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            border-color: #d1fae5 !important;
+        }
+        .theme-minimal .theme-card {
+            background-color: #fcfcfc !important;
+            border-color: #f4f4f5 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        /* Custom scrollbar for mobile */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+
+        /* Continuous Gallery Move Marquee */
+        @keyframes galleryMarquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee-smooth {
+            display: flex;
+            width: max-content;
+            animation: galleryMarquee 26s linear infinite;
+        }
+        .animate-marquee-smooth:hover,
+        .animate-marquee-smooth:active {
+            animation-play-state: paused;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body 
+    class="min-h-screen bg-neutral-900 flex justify-center selection:bg-amber-200 selection:text-amber-900"
+    x-data="invitationApp({
+        eventDate: '{{ invitation.event_date|date:"c" }}',
+        hasAudio: {% if invitation.get_audio_url %}true{% else %}false{% endif %},
+        audioUrl: '{{ invitation.get_audio_url|default:"" }}',
+        rsvpUrl: '{% url "invitations:submit_rsvp" slug=invitation.slug %}',
+        wishUrl: '{% url "invitations:submit_wish" slug=invitation.slug %}',
+        defaultGalleryEffect: '{{ invitation.gallery_effect|default:"grid" }}'
+    })"
+>
+
+    <!-- Audio Element -->
+    {% if invitation.get_audio_url %}
+    <audio x-ref="bgAudio" loop preload="auto">
+        <source src="{{ invitation.get_audio_url }}" type="audio/mp3">
+    </audio>
+    {% endif %}
+
+    <!-- ================================================================= -->
+    <!-- ENVELOPE / OPENING COVER OVERLAY (Full Screen Mobile) -->
+    <!-- ================================================================= -->
+    <div 
+        x-show="!isOpen" 
+        x-transition:leave="transition ease-in-out duration-700 transform"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-full"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900 text-white px-6 overflow-hidden"
+        style="background-image: linear-gradient(rgba(18, 18, 18, 0.72), rgba(18, 18, 18, 0.88)), url('{{ invitation.get_cover_image_url }}'); background-size: cover; background-position: {{ invitation.cover_focus_position|default:'center' }};"
+    >
+        <div class="max-w-md w-full text-center space-y-6 animate-float">
+            <!-- Event Type Badge -->
+            <div class="inline-block px-4 py-1 rounded-full border border-amber-300/40 bg-black/40 backdrop-blur-sm text-xs uppercase tracking-widest text-amber-200 font-medium">
+                {{ invitation.get_event_type_display }}
+            </div>
+
+            <!-- Couple / Celebrant Names -->
+            <h1 class="font-theme-header text-4xl sm:text-5xl font-semibold tracking-wide text-amber-50 drop-shadow-md leading-tight">
+                {{ invitation.hosts_or_celebrants }}
+            </h1>
+
+            <p class="text-xs sm:text-sm uppercase tracking-widest text-stone-300">
+                {{ invitation.event_date|date:"l, F j, Y" }}
+            </p>
+
+            <!-- Personalized Guest Callout Card -->
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl space-y-2 mt-8">
+                <p class="text-xs uppercase tracking-wider text-amber-200 font-medium">Special Invitation For</p>
+                <h2 class="text-xl sm:text-2xl font-theme-header font-bold text-white">
+                    {% if guest_name %}
+                        {{ guest_name }}
+                    {% else %}
+                        Honored Guest & Family
+                    {% endif %}
+                </h2>
+                <p class="text-xs text-stone-300">
+                    You are warmly invited to celebrate this memorable occasion with us.
+                </p>
+            </div>
+
+            <!-- Open Button -->
+            <div class="pt-4">
+                <button 
+                    @click="openInvitation()"
+                    type="button"
+                    style="background-color: var(--accent-color);"
+                    class="group inline-flex items-center space-x-3 px-8 py-3.5 rounded-full text-white font-medium text-sm shadow-lg hover:brightness-110 transition-all transform active:scale-95"
+                >
+                    <svg class="w-5 h-5 text-white/90 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Open Invitation</span>
+                </button>
+            </div>
+            
+            <p class="text-[11px] text-stone-400">
+                Tap to view details {% if invitation.audio_url %}& play music{% endif %}
+            </p>
+        </div>
+    </div>
+
+
+    <!-- ================================================================= -->
+    <!-- MAIN MOBILE CONTAINER (480px max-width, mobile-first aesthetic) -->
+    <!-- ================================================================= -->
+    <div class="w-full max-w-md {% if invitation.theme_style == 'dark' %}bg-stone-950 text-stone-100 theme-dark{% elif invitation.theme_style == 'romantic' %}bg-[#fff5f7] text-stone-800 theme-romantic{% elif invitation.theme_style == 'botanical' %}bg-[#f4f7f4] text-stone-800 theme-botanical{% elif invitation.theme_style == 'minimal' %}bg-white text-stone-900 theme-minimal{% else %}bg-stone-50 text-stone-800 theme-classic{% endif %} min-h-screen shadow-2xl relative flex flex-col font-sans pb-24 overflow-x-hidden">
+
+        <!-- Floating Music Controller Button -->
+        {% if invitation.get_audio_url %}
+        <div class="fixed bottom-6 right-6 z-40 max-w-md">
+            <button 
+                @click="toggleAudio()"
+                type="button"
+                :style="isPlaying ? 'background-color: var(--accent-color)' : ''"
+                :class="isPlaying ? 'animate-spin-slow text-white' : 'bg-stone-900 text-stone-300'"
+                class="w-12 h-12 rounded-full flex items-center justify-center shadow-xl border-2 border-white/80 transition-all transform active:scale-90"
+                title="Toggle Background Music"
+            >
+                <template x-if="isPlaying">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    </svg>
+                </template>
+                <template x-if="!isPlaying">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    </svg>
+                </template>
+            </button>
+        </div>
+        {% endif %}
+
+        <!-- ============================================================= -->
+        <!-- 1. HERO COVER SECTION -->
+        <!-- ============================================================= -->
+        <section class="relative min-h-[560px] flex flex-col justify-end p-6 pb-12 text-white bg-stone-900 overflow-hidden">
+            <!-- Background Image with Vignette & Custom ROI / Framing Zoom -->
+            <img 
+                src="{{ invitation.get_cover_image_url }}" 
+                alt="{{ invitation.title }}" 
+                style="object-position: {{ invitation.cover_focus_position|default:'center' }}; transform: scale({{ invitation.cover_zoom_scale|default:1.0 }}); transform-origin: {{ invitation.cover_focus_position|default:'center' }};"
+                class="absolute inset-0 w-full h-full object-cover opacity-70 filter brightness-90 transition-transform duration-700 cursor-pointer"
+                @click="openLightbox('{{ invitation.get_cover_image_url }}', '{{ invitation.hosts_or_celebrants|escapejs }} — Cover Photo')"
+                title="Tap to zoom in & view full size"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-900/50 to-transparent pointer-events-none"></div>
+
+            <!-- View / Zoom Photo Button -->
+            <div class="absolute top-4 right-4 z-20">
+                <button 
+                    @click="openLightbox('{{ invitation.get_cover_image_url }}', '{{ invitation.hosts_or_celebrants|escapejs }} — Cover Photo')"
+                    type="button"
+                    class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white/90 hover:text-white text-[11px] font-medium border border-white/20 shadow-md transition transform active:scale-95"
+                >
+                    <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"/>
+                    </svg>
+                    <span>Zoom Photo</span>
+                </button>
+            </div>
+
+            <div class="relative z-10 text-center space-y-4">
+                <span class="inline-block text-xs uppercase tracking-[0.25em] text-amber-300 font-semibold px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-amber-300/30">
+                    {{ invitation.get_event_type_display }}
+                </span>
+
+                <h1 class="font-theme-header text-4xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+                    {{ invitation.hosts_or_celebrants }}
+                </h1>
+
+                <div class="w-16 h-0.5 bg-amber-400 mx-auto rounded-full"></div>
+
+                <p class="text-sm font-medium tracking-wider uppercase text-stone-200">
+                    {{ invitation.event_date|date:"l, F j, Y" }}
+                </p>
+
+                {% if invitation.venue_summary %}
+                <p class="text-xs text-stone-300 flex items-center justify-center space-x-1">
+                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>{{ invitation.venue_summary }}</span>
+                </p>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 2. COUNTDOWN TIMER -->
+        <!-- ============================================================= -->
+        <section class="-mt-8 relative z-20 px-4">
+            <div class="bg-white rounded-2xl shadow-xl border border-stone-100 p-5 text-center theme-card">
+                <p class="text-xs font-semibold uppercase tracking-widest mb-3" style="color: var(--accent-color);">Counting Down To The Day</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <div class="bg-stone-50 rounded-xl p-2.5 border border-stone-200 theme-subcard">
+                        <div class="text-2xl font-bold font-theme-header" style="color: var(--accent-color);" x-text="countdown.days">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-stone-500 theme-subtext mt-0.5">Days</div>
+                    </div>
+                    <div class="bg-stone-50 rounded-xl p-2.5 border border-stone-200 theme-subcard">
+                        <div class="text-2xl font-bold font-theme-header" style="color: var(--accent-color);" x-text="countdown.hours">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-stone-500 theme-subtext mt-0.5">Hours</div>
+                    </div>
+                    <div class="bg-stone-50 rounded-xl p-2.5 border border-stone-200 theme-subcard">
+                        <div class="text-2xl font-bold font-theme-header" style="color: var(--accent-color);" x-text="countdown.minutes">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-stone-500 theme-subtext mt-0.5">Mins</div>
+                    </div>
+                    <div class="bg-stone-50 rounded-xl p-2.5 border border-stone-200 theme-subcard">
+                        <div class="text-2xl font-bold font-theme-header" style="color: var(--accent-color);" x-text="countdown.seconds">0</div>
+                        <div class="text-[10px] uppercase tracking-wider text-stone-500 theme-subtext mt-0.5">Secs</div>
+                    </div>
+                </div>
+
+                <!-- Add to Calendar Link -->
+                <div class="mt-4 pt-3 border-t border-stone-100/80">
+                    <a 
+                        href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ invitation.title|urlencode }}&dates={{ invitation.event_date|date:'Ymd\THis\Z' }}/{{ invitation.event_date|date:'Ymd\THis\Z' }}&details={{ invitation.welcome_quote|urlencode }}&location={{ invitation.venue_summary|urlencode }}" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style="color: var(--accent-color);"
+                        class="inline-flex items-center text-xs font-semibold space-x-1.5 py-1 px-3 rounded-full hover:bg-black/5 transition"
+                    >
+                        <svg class="w-4 h-4" style="color: var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Save to Google Calendar</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 3. WELCOME & QUOTE -->
+        <!-- ============================================================= -->
+        <section class="px-6 py-12 text-center space-y-4">
+            <div class="flex items-center justify-center space-x-3" style="color: var(--accent-color);">
+                <span class="w-8 h-[1px]" style="background-color: var(--accent-color);"></span>
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span class="w-8 h-[1px]" style="background-color: var(--accent-color);"></span>
+            </div>
+
+            <p class="font-theme-header text-lg sm:text-xl italic text-stone-700 leading-relaxed px-4">
+                &ldquo;{{ invitation.welcome_quote }}&rdquo;
+            </p>
+
+            <p class="text-xs text-stone-500 uppercase tracking-widest font-medium">
+                {{ invitation.hosts_or_celebrants }}
+            </p>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 4. SCHEDULE & VENUES TIMELINE -->
+        <!-- ============================================================= -->
+        <section class="px-6 py-8 bg-stone-100/70 border-y border-stone-200 space-y-6">
+            <div class="text-center space-y-1">
+                <p class="text-xs uppercase tracking-widest font-semibold" style="color: var(--accent-color);">Event Agenda</p>
+                <h2 class="font-theme-header text-3xl font-bold text-stone-900 theme-section-title">Date & Location</h2>
+            </div>
+
+            <div class="space-y-4">
+                {% for schedule in schedules %}
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-stone-200/80 space-y-3 relative overflow-hidden theme-card">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full" style="background-color: var(--accent-soft); color: var(--accent-color); border: 1px solid var(--accent-border);">
+                                Part {{ forloop.counter }}
+                            </span>
+                            <h3 class="font-theme-header text-xl font-bold text-stone-900 theme-section-title mt-1">
+                                {{ schedule.title }}
+                            </h3>
+                        </div>
+                    </div>
+
+                    <!-- Time -->
+                    <div class="flex items-center space-x-2 text-xs text-stone-600 theme-subtext">
+                        <svg class="w-4 h-4 flex-shrink-0" style="color: var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>
+                            {{ schedule.start_time|date:"h:i A" }}
+                            {% if schedule.end_time %} - {{ schedule.end_time|date:"h:i A" }}{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Venue -->
+                    <div class="flex items-start space-x-2 text-xs text-stone-600 theme-subtext">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-stone-800 theme-section-title">{{ schedule.venue_name }}</p>
+                            {% if schedule.address %}<p class="text-stone-500 theme-subtext mt-0.5">{{ schedule.address }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dress Code -->
+                    {% if schedule.dress_code %}
+                    <div class="pt-1 text-xs text-stone-500 theme-subtext">
+                        <span class="font-medium text-stone-700 theme-section-title">Dress Code:</span> {{ schedule.dress_code }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Google Maps Button -->
+                    {% if schedule.map_url %}
+                    <div class="pt-2">
+                        <a 
+                            href="{{ schedule.map_url }}" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="w-full inline-flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold transition"
+                        >
+                            <svg class="w-4 h-4" style="color: var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                            </svg>
+                            <span>Open in Google Maps</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="bg-white rounded-2xl p-6 text-center text-xs text-stone-500">
+                    Schedule details will be updated shortly.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 5. PHOTO GALLERY & MEMORIES (With Multi-Effect Selector & Lightbox) -->
+        <!-- ============================================================= -->
+        {% if gallery_photos %}
+        <section class="px-6 py-10 space-y-6">
+            <div class="text-center space-y-1">
+                <p class="text-xs uppercase tracking-widest font-semibold" style="color: var(--accent-color);">Moments & Memories</p>
+                <h2 class="font-theme-header text-3xl font-bold text-stone-900 theme-section-title">Our Photo Gallery</h2>
+                <p class="text-xs text-stone-500 theme-subtext">Tap any photo to view full size & zoom in.</p>
+            </div>
+
+            <!-- Interactive Gallery Effect Mode Switcher Pills -->
+            <div class="flex items-center justify-center">
+                <div class="inline-flex p-1 rounded-xl bg-stone-200/70 dark:bg-stone-800 border border-stone-300/50 backdrop-blur-sm gap-1 text-xs">
+                    <button 
+                        type="button"
+                        @click="setGalleryEffect('grid')" 
+                        :class="galleryEffect === 'grid' ? 'bg-white shadow-sm text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="px-2.5 py-1 rounded-lg transition"
+                    >
+                        Grid
+                    </button>
+                    <button 
+                        type="button"
+                        @click="setGalleryEffect('slide')" 
+                        :class="galleryEffect === 'slide' ? 'bg-white shadow-sm text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="px-2.5 py-1 rounded-lg transition"
+                    >
+                        Slide
+                    </button>
+                    <button 
+                        type="button"
+                        @click="setGalleryEffect('carousel')" 
+                        :class="galleryEffect === 'carousel' ? 'bg-white shadow-sm text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="px-2.5 py-1 rounded-lg transition"
+                    >
+                        Carousel
+                    </button>
+                    <button 
+                        type="button"
+                        @click="setGalleryEffect('move')" 
+                        :class="galleryEffect === 'move' ? 'bg-white shadow-sm text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="px-2.5 py-1 rounded-lg transition"
+                    >
+                        Move
+                    </button>
+                    <button 
+                        type="button"
+                        @click="setGalleryEffect('fade')" 
+                        :class="galleryEffect === 'fade' ? 'bg-white shadow-sm text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="px-2.5 py-1 rounded-lg transition"
+                    >
+                        Fade
+                    </button>
+                </div>
+            </div>
+
+            <!-- Effect 1: Classic Masonry Grid -->
+            <div x-show="galleryEffect === 'grid'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="grid grid-cols-2 gap-3">
+                {% for photo in gallery_photos %}
+                <div 
+                    @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                    class="group relative rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-[4/5] bg-stone-100 cursor-pointer transform transition active:scale-95 hover:shadow-md"
+                >
+                    <img 
+                        src="{{ photo.image.url }}" 
+                        alt="{{ photo.caption|default:'Gallery Image' }}" 
+                        loading="lazy"
+                        class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    >
+                    {% if photo.caption %}
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3 pt-6">
+                        <p class="text-[11px] text-white font-medium truncate">{{ photo.caption }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Effect 2: Smooth Horizontal Slide -->
+            <div x-show="galleryEffect === 'slide'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-3">
+                <div 
+                    x-ref="slideTrack"
+                    class="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-2 px-0.5 scroll-smooth"
+                >
+                    {% for photo in gallery_photos %}
+                    <div 
+                        @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                        class="shrink-0 w-[78%] sm:w-[60%] snap-center group relative rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-[4/5] bg-stone-100 cursor-pointer transform transition active:scale-95"
+                    >
+                        <img 
+                            src="{{ photo.image.url }}" 
+                            alt="{{ photo.caption|default:'Gallery Image' }}" 
+                            loading="lazy"
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        >
+                        {% if photo.caption %}
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3 pt-6">
+                            <p class="text-[11px] text-white font-medium truncate">{{ photo.caption }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Arrow Controls & Hint -->
+                <div class="flex items-center justify-between px-1 text-xs">
+                    <button 
+                        type="button"
+                        @click="scrollSlideTrack(-1)"
+                        class="w-8 h-8 rounded-full bg-white/90 shadow border border-stone-200 flex items-center justify-center text-stone-700 hover:bg-white active:scale-90 transition"
+                        title="Previous Photo"
+                    >
+                        &larr;
+                    </button>
+                    <span class="text-[11px] text-stone-400 font-medium">Swipe horizontally &bull; Tap to zoom</span>
+                    <button 
+                        type="button"
+                        @click="scrollSlideTrack(1)"
+                        class="w-8 h-8 rounded-full bg-white/90 shadow border border-stone-200 flex items-center justify-center text-stone-700 hover:bg-white active:scale-90 transition"
+                        title="Next Photo"
+                    >
+                        &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Effect 3: Featured Spotlight Carousel -->
+            <div x-show="galleryEffect === 'carousel'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-3">
+                <div class="relative rounded-2xl overflow-hidden shadow-md border border-stone-200 aspect-[4/5] bg-stone-900 group">
+                    <template x-for="(photo, idx) in galleryItems" :key="idx">
+                        <div 
+                            x-show="carouselIdx === idx"
+                            x-transition:enter="transition ease-out duration-300 transform"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-200 transform absolute inset-0"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="w-full h-full cursor-pointer"
+                            @click="openLightbox(photo.url, photo.caption)"
+                        >
+                            <img :src="photo.url" :alt="photo.caption || 'Gallery Image'" class="w-full h-full object-cover">
+                            <div x-show="photo.caption" class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-8">
+                                <p class="text-xs text-white font-medium text-center" x-text="photo.caption"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Counter Pill -->
+                    <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[11px] font-mono px-2.5 py-0.5 rounded-full z-10 border border-white/20">
+                        <span x-text="(carouselIdx + 1) + ' / ' + galleryItems.length"></span>
+                    </div>
+
+                    <!-- Navigation Arrows -->
+                    <button 
+                        type="button" 
+                        @click.stop="prevCarousel()" 
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-10 border border-white/20"
+                        title="Previous"
+                    >
+                        &larr;
+                    </button>
+                    <button 
+                        type="button" 
+                        @click.stop="nextCarousel()" 
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-10 border border-white/20"
+                        title="Next"
+                    >
+                        &rarr;
+                    </button>
+                </div>
+
+                <!-- Bottom Bar: Play/Pause, Dots & Hint -->
+                <div class="flex items-center justify-between px-1">
+                    <button 
+                        type="button"
+                        @click="toggleAutoplay()"
+                        class="text-[11px] font-semibold text-stone-500 hover:text-stone-800 flex items-center space-x-1"
+                    >
+                        <span x-text="autoplayEnabled ? '⏸ Pause' : '▶ Play'"></span>
+                    </button>
+
+                    <!-- Dot Indicators -->
+                    <div class="flex items-center space-x-1.5 overflow-x-auto max-w-[200px] py-1">
+                        <template x-for="(photo, idx) in galleryItems" :key="idx">
+                            <button 
+                                type="button" 
+                                @click="setCarousel(idx)" 
+                                :class="carouselIdx === idx ? 'w-6 bg-amber-700' : 'w-2 bg-stone-300'"
+                                class="h-2 rounded-full transition-all"
+                                :title="'Go to photo ' + (idx + 1)"
+                            ></button>
+                        </template>
+                    </div>
+
+                    <span class="text-[10px] text-stone-400">Tap to zoom</span>
+                </div>
+            </div>
+
+            <!-- Effect 4: Continuous Infinite Marquee / Move -->
+            <div x-show="galleryEffect === 'move'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-2">
+                <div 
+                    class="overflow-hidden relative w-full py-1 group rounded-2xl cursor-grab"
+                    @mouseenter="isMovePaused = true"
+                    @mouseleave="isMovePaused = false"
+                    @touchstart="isMovePaused = true"
+                    @touchend="isMovePaused = false"
+                >
+                    <div 
+                        class="animate-marquee-smooth flex gap-3"
+                        :style="isMovePaused ? 'animation-play-state: paused !important;' : ''"
+                    >
+                        <!-- Track Set 1 -->
+                        {% for photo in gallery_photos %}
+                        <div 
+                            @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                            class="shrink-0 w-44 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 relative cursor-pointer active:scale-95 transition"
+                        >
+                            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
+                            {% if photo.caption %}
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2.5 pt-5">
+                                <p class="text-[10px] text-white font-medium truncate">{{ photo.caption }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <!-- Duplicate Track Set 2 for infinite seamless loop -->
+                        {% for photo in gallery_photos %}
+                        <div 
+                            @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                            class="shrink-0 w-44 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 relative cursor-pointer active:scale-95 transition"
+                        >
+                            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
+                            {% if photo.caption %}
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2.5 pt-5">
+                                <p class="text-[10px] text-white font-medium truncate">{{ photo.caption }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-stone-400 px-1">
+                    <span>✨ Continuous glide motion (touch to pause)</span>
+                    <button type="button" @click="isMovePaused = !isMovePaused" class="text-amber-700 font-semibold" x-text="isMovePaused ? 'Resume &rarr;' : 'Pause'"></button>
+                </div>
+            </div>
+
+            <!-- Effect 5: Cinematic Crossfade Deck -->
+            <div x-show="galleryEffect === 'fade'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="space-y-3">
+                <div class="relative rounded-2xl overflow-hidden shadow-md border border-stone-200 aspect-[4/5] bg-stone-900 group">
+                    <template x-for="(photo, idx) in galleryItems" :key="idx">
+                        <div 
+                            x-show="fadeIdx === idx"
+                            x-transition:enter="transition-opacity ease-in-out duration-700"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition-opacity ease-in-out duration-700 absolute inset-0"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="w-full h-full cursor-pointer"
+                            @click="openLightbox(photo.url, photo.caption)"
+                        >
+                            <img :src="photo.url" :alt="photo.caption || 'Gallery Image'" class="w-full h-full object-cover">
+                            <div x-show="photo.caption" class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 pt-8">
+                                <p class="text-xs text-amber-100 font-serif italic text-center" x-text="photo.caption"></p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Controls -->
+                    <button 
+                        type="button" 
+                        @click.stop="prevFade()" 
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-10 border border-white/20"
+                        title="Previous"
+                    >
+                        &larr;
+                    </button>
+                    <button 
+                        type="button" 
+                        @click.stop="nextFade()" 
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-10 border border-white/20"
+                        title="Next"
+                    >
+                        &rarr;
+                    </button>
+                </div>
+
+                <!-- Thumbnail bar -->
+                <div class="flex gap-2 overflow-x-auto no-scrollbar py-1 justify-center">
+                    <template x-for="(photo, idx) in galleryItems" :key="idx">
+                        <button 
+                            type="button" 
+                            @click="setFade(idx)"
+                            class="w-11 h-11 rounded-lg overflow-hidden border-2 transition shrink-0"
+                            :class="fadeIdx === idx ? 'border-amber-600 scale-105 shadow' : 'border-transparent opacity-60 hover:opacity-100'"
+                        >
+                            <img :src="photo.url" class="w-full h-full object-cover">
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- ============================================================= -->
+        <!-- 6. RSVP INTERACTIVE FORM -->
+        <!-- ============================================================= -->
+        <section id="rsvp" class="px-6 py-12 space-y-6">
+            <div class="text-center space-y-1">
+                <p class="text-xs uppercase tracking-widest font-semibold" style="color: var(--accent-color);">Attendance Confirmation</p>
+                <h2 class="font-theme-header text-3xl font-bold text-stone-900 theme-section-title">R.S.V.P</h2>
+                <p class="text-xs text-stone-500 theme-subtext max-w-xs mx-auto">Please kindly confirm your attendance before the event date.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-md border border-stone-200 theme-card">
+                <!-- Success Message Banner -->
+                <div 
+                    x-show="rsvpSubmitted" 
+                    x-transition 
+                    class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-2 mb-4"
+                >
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <p class="font-semibold text-sm text-emerald-800" x-text="rsvpMessage">Thank you! Your RSVP has been confirmed.</p>
+                    <p class="text-xs text-emerald-600">We look forward to seeing you!</p>
+                </div>
+
+                <form @submit.prevent="submitRSVP()" method="post" action="{% url 'invitations:submit_rsvp' slug=invitation.slug %}" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 theme-section-title uppercase tracking-wider mb-1">Your Name</label>
+                        <input 
+                            type="text" 
+                            name="guest_name" 
+                            x-model="rsvpData.guest_name" 
+                            required
+                            placeholder="Enter your full name" 
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 bg-stone-50 theme-input"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 theme-section-title uppercase tracking-wider mb-2">Will you be attending?</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label 
+                                class="flex items-center justify-center p-3 rounded-xl border cursor-pointer text-xs font-semibold transition"
+                                :class="rsvpData.is_attending === 'yes' ? 'text-white shadow-sm' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 theme-subcard'"
+                                :style="rsvpData.is_attending === 'yes' ? 'background-color: var(--accent-color); border-color: var(--accent-color);' : ''"
+                            >
+                                <input type="radio" name="is_attending" value="yes" x-model="rsvpData.is_attending" class="sr-only" required>
+                                <span>&check; Attending</span>
+                            </label>
+                            <label 
+                                class="flex items-center justify-center p-3 rounded-xl border cursor-pointer text-xs font-semibold transition"
+                                :class="rsvpData.is_attending === 'no' ? 'bg-stone-800 text-white border-stone-800 shadow-sm' : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100 theme-subcard'"
+                            >
+                                <input type="radio" name="is_attending" value="no" x-model="rsvpData.is_attending" class="sr-only" required>
+                                <span>&times; Unable to Attend</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div x-show="rsvpData.is_attending === 'yes'" x-transition>
+                        <label class="block text-xs font-semibold text-stone-700 theme-section-title uppercase tracking-wider mb-1">Total Guests (Headcount)</label>
+                        <select 
+                            name="actual_pax" 
+                            x-model="rsvpData.actual_pax"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 bg-stone-50 theme-input"
+                        >
+                            <option value="1">1 Person</option>
+                            <option value="2">2 Persons</option>
+                            <option value="3">3 Persons</option>
+                            <option value="4">4 Persons</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 theme-section-title uppercase tracking-wider mb-1">Notes / Dietary Needs (Optional)</label>
+                        <textarea 
+                            name="notes" 
+                            x-model="rsvpData.notes" 
+                            rows="2" 
+                            placeholder="e.g. vegetarian, allergies, or travel notes"
+                            class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 bg-stone-50 theme-input"
+                        ></textarea>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        :disabled="isSubmittingRSVP"
+                        style="background-color: var(--accent-color);"
+                        class="w-full py-3.5 rounded-xl text-white font-semibold text-sm shadow-md hover:brightness-110 transition-all flex items-center justify-center space-x-2 disabled:opacity-60 transform active:scale-95"
+                    >
+                        <span x-show="!isSubmittingRSVP">Submit Confirmation</span>
+                        <span x-show="isSubmittingRSVP">Submitting...</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 7. WISHES & GUESTBOOK FEED -->
+        <!-- ============================================================= -->
+        <section id="wishes" class="px-6 py-8 bg-stone-100/70 border-y border-stone-200 space-y-6">
+            <div class="text-center space-y-1">
+                <p class="text-xs uppercase tracking-widest font-semibold" style="color: var(--accent-color);">Warm Greetings</p>
+                <h2 class="font-theme-header text-3xl font-bold text-stone-900 theme-section-title">Wishes & Prayers</h2>
+                <p class="text-xs text-stone-500 theme-subtext">Leave your blessings and messages for the celebrants.</p>
+            </div>
+
+            <!-- Wish Form -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-200 theme-card">
+                <form @submit.prevent="submitWish()" class="space-y-3">
+                    {% csrf_token %}
+                    <div>
+                        <input 
+                            type="text" 
+                            x-model="newWish.sender_name" 
+                            placeholder="Your Name" 
+                            required
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 bg-stone-50 theme-input"
+                        />
+                    </div>
+                    <div>
+                        <select 
+                            x-model="newWish.attendance_status" 
+                            class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 bg-stone-50 text-stone-700 theme-input"
+                        >
+                            <option value="attending">Will Attend</option>
+                            <option value="maybe">Tentative</option>
+                            <option value="declined">Cannot Attend</option>
+                        </select>
+                    </div>
+                    <div>
+                        <textarea 
+                            x-model="newWish.message" 
+                            rows="3" 
+                            placeholder="Write your prayers, blessings, and warm wishes..." 
+                            required
+                            class="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 bg-stone-50 theme-input"
+                        ></textarea>
+                    </div>
+                    <button 
+                        type="submit" 
+                        :disabled="isSubmittingWish"
+                        style="background-color: var(--accent-color);"
+                        class="w-full py-2.5 rounded-xl text-white text-xs font-semibold shadow-sm hover:brightness-110 transition disabled:opacity-60"
+                    >
+                        <span x-show="!isSubmittingWish">Send Wish</span>
+                        <span x-show="isSubmittingWish">Posting...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Wishes Feed -->
+            <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                <template x-for="wish in wishList" :key="wish.id">
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-stone-200/80 space-y-2 theme-card">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs" style="background-color: var(--accent-soft); color: var(--accent-color);">
+                                    <span x-text="wish.sender_name ? wish.sender_name.charAt(0).toUpperCase() : 'G'"></span>
+                                </div>
+                                <span class="text-xs font-bold text-stone-900 theme-section-title" x-text="wish.sender_name"></span>
+                            </div>
+                            <span 
+                                class="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                                :class="{
+                                    'bg-emerald-100 text-emerald-800': wish.status === 'Attending' || wish.status === 'attending' || wish.status === 'Will Attend',
+                                    'bg-stone-100 text-stone-600': wish.status !== 'Attending' && wish.status !== 'attending' && wish.status !== 'Will Attend'
+                                }"
+                                x-text="wish.status"
+                            ></span>
+                        </div>
+                        <p class="text-xs text-stone-700 theme-subtext leading-relaxed" x-text="wish.message"></p>
+                        <p class="text-[10px] text-stone-400" x-text="wish.created_at"></p>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- 8. DIGITAL ENVELOPE / GIFT REGISTRY -->
+        <!-- ============================================================= -->
+        {% if invitation.gift_bank_name and invitation.gift_account_number %}
+        <section class="px-6 py-12 space-y-6 text-center">
+            <div class="space-y-1">
+                <p class="text-xs uppercase tracking-widest font-semibold" style="color: var(--accent-color);">Love Gift</p>
+                <h2 class="font-theme-header text-3xl font-bold text-stone-900 theme-section-title">Digital Envelope</h2>
+                <p class="text-xs text-stone-500 theme-subtext max-w-xs mx-auto">
+                    {{ invitation.gift_note }}
+                </p>
+            </div>
+
+            <div class="bg-gradient-to-br from-stone-900 to-stone-800 text-white rounded-2xl p-6 shadow-xl space-y-4 text-left relative overflow-hidden border border-stone-700 theme-card">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs uppercase tracking-widest font-medium" style="color: var(--accent-color);">{{ invitation.gift_bank_name }}</span>
+                    <svg class="w-6 h-6" style="color: var(--accent-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                    </svg>
+                </div>
+
+                <div class="pt-2">
+                    <p class="text-xs text-stone-400 uppercase tracking-wider">Account Number</p>
+                    <p class="text-xl sm:text-2xl font-mono tracking-wider text-white font-bold">
+                        {{ invitation.gift_account_number }}
+                    </p>
+                </div>
+
+                {% if invitation.gift_account_name %}
+                <div>
+                    <p class="text-xs text-stone-400 uppercase tracking-wider">Account Holder</p>
+                    <p class="text-sm font-semibold text-white">{{ invitation.gift_account_name }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Copy Button -->
+                <div class="pt-2">
+                    <button 
+                        @click="copyAccount('{{ invitation.gift_account_number }}')"
+                        type="button"
+                        style="background-color: var(--accent-color);"
+                        class="w-full py-2.5 rounded-xl text-white text-xs font-semibold flex items-center justify-center space-x-2 hover:brightness-110 transition"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span x-text="copied ? 'Copied to Clipboard!' : 'Copy Account Number'"></span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- ============================================================= -->
+        <!-- 8. FOOTER THANK YOU -->
+        <!-- ============================================================= -->
+        <footer class="mt-auto px-6 pt-10 pb-8 text-center space-y-4 bg-stone-900 text-white">
+            <p class="font-theme-header text-2xl sm:text-3xl text-amber-200">
+                {{ invitation.hosts_or_celebrants }}
+            </p>
+            <p class="text-xs text-stone-400 max-w-xs mx-auto leading-relaxed">
+                Thank you for being a part of our journey and celebrating this milestone with us.
+            </p>
+            <div class="pt-6 border-t border-stone-800 text-[10px] text-stone-500">
+                Created with <a href="/" class="text-amber-400 hover:underline">Inviqo</a> &bull; Digital Invitation Platform
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- LIGHTBOX MODAL (Full Screen Mobile with Interactive Zoom) -->
+    <!-- ================================================================= -->
+    <div 
+        x-show="isLightboxOpen" 
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @keydown.escape.window="isLightboxOpen = false"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/95 p-4 backdrop-blur-md select-none"
+        style="display: none;"
+    >
+        <!-- Top Toolbar with Zoom Controls & Close Button -->
+        <div class="w-full max-w-md flex items-center justify-between z-50 pt-2 px-1">
+            <!-- Zoom In / Zoom Out Controls -->
+            <div class="flex items-center space-x-1.5 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 border border-white/20">
+                <button 
+                    @click="zoomOutLightbox()" 
+                    type="button" 
+                    :disabled="lightboxZoom <= 1.0"
+                    :class="lightboxZoom <= 1.0 ? 'opacity-40 cursor-not-allowed' : 'hover:text-amber-300'"
+                    class="w-7 h-7 flex items-center justify-center text-white text-base font-bold transition"
+                    title="Zoom Out"
+                >
+                    &minus;
+                </button>
+                <span class="text-xs font-mono font-bold text-amber-200 w-12 text-center" x-text="Math.round(lightboxZoom * 100) + '%'"></span>
+                <button 
+                    @click="zoomInLightbox()" 
+                    type="button" 
+                    :disabled="lightboxZoom >= 3.0"
+                    :class="lightboxZoom >= 3.0 ? 'opacity-40 cursor-not-allowed' : 'hover:text-amber-300'"
+                    class="w-7 h-7 flex items-center justify-center text-white text-base font-bold transition"
+                    title="Zoom In"
+                >
+                    +
+                </button>
+                <button 
+                    @click="resetLightboxZoom()" 
+                    x-show="lightboxZoom !== 1.0" 
+                    type="button" 
+                    class="ml-1 text-[10px] text-stone-300 hover:text-white px-2 py-0.5 rounded bg-white/15 border border-white/20 font-medium transition"
+                >
+                    1x
+                </button>
+            </div>
+
+            <!-- Close Button -->
+            <button 
+                @click="isLightboxOpen = false" 
+                class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xl transition"
+                title="Close Lightbox"
+            >
+                &times;
+            </button>
+        </div>
+
+        <!-- Center Image Stage (Pan/Scrollable when zoomed, with Left/Right arrows) -->
+        <div class="relative flex-1 w-full max-w-md flex items-center justify-center overflow-auto my-auto p-2">
+            <button 
+                x-show="galleryItems.length > 1" 
+                type="button" 
+                @click.stop="lightboxPrev()" 
+                class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-40 border border-white/20 text-base"
+                title="Previous Photo"
+            >
+                &larr;
+            </button>
+            <img 
+                :src="activePhoto" 
+                @dblclick="toggleLightboxZoom()"
+                :style="'transform: scale(' + lightboxZoom + '); transform-origin: center center; cursor: ' + (lightboxZoom > 1.0 ? 'zoom-out' : 'zoom-in') + ';'"
+                class="max-h-[72vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl transition-transform duration-200"
+            >
+            <button 
+                x-show="galleryItems.length > 1" 
+                type="button" 
+                @click.stop="lightboxNext()" 
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-sm flex items-center justify-center transition active:scale-90 z-40 border border-white/20 text-base"
+                title="Next Photo"
+            >
+                &rarr;
+            </button>
+        </div>
+
+        <!-- Bottom Caption & Double Tap Hint -->
+        <div class="w-full max-w-md text-center space-y-1 pb-4 z-50">
+            <p x-show="activeCaption" x-text="activeCaption" class="text-xs text-stone-200 font-medium px-4"></p>
+            <p class="text-[10px] text-stone-400">💡 Double tap image or use +/- to zoom in on details</p>
+        </div>
+    </div>
+
+    <!-- Alpine.js Application Logic -->
+    <script>
+        function invitationApp(config) {
+            return {
+                isOpen: false,
+                isPlaying: false,
+                hasAudio: config.hasAudio,
+                copied: false,
+                rsvpSubmitted: false,
+                isSubmittingRSVP: false,
+                rsvpMessage: '',
+                isSubmittingWish: false,
+
+                // Gallery motion effects state
+                galleryEffect: config.defaultGalleryEffect || 'grid',
+                carouselIdx: 0,
+                fadeIdx: 0,
+                autoplayEnabled: true,
+                autoplayTimer: null,
+                isMovePaused: false,
+                galleryItems: [
+                    {% for photo in gallery_photos %}
+                    {
+                        url: '{{ photo.image.url }}',
+                        caption: '{{ photo.caption|default:""|escapejs }}'
+                    },
+                    {% endfor %}
+                ],
+                activeLightboxIdx: 0,
+
+                setGalleryEffect(effect) {
+                    this.galleryEffect = effect;
+                },
+
+                scrollSlideTrack(dir) {
+                    const track = this.$refs.slideTrack;
+                    if (track) {
+                        const scrollAmount = track.clientWidth * 0.75 * dir;
+                        track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    }
+                },
+
+                nextCarousel() {
+                    if (this.galleryItems.length > 0) {
+                        this.carouselIdx = (this.carouselIdx + 1) % this.galleryItems.length;
+                    }
+                },
+
+                prevCarousel() {
+                    if (this.galleryItems.length > 0) {
+                        this.carouselIdx = (this.carouselIdx - 1 + this.galleryItems.length) % this.galleryItems.length;
+                    }
+                },
+
+                setCarousel(idx) {
+                    this.carouselIdx = idx;
+                },
+
+                nextFade() {
+                    if (this.galleryItems.length > 0) {
+                        this.fadeIdx = (this.fadeIdx + 1) % this.galleryItems.length;
+                    }
+                },
+
+                prevFade() {
+                    if (this.galleryItems.length > 0) {
+                        this.fadeIdx = (this.fadeIdx - 1 + this.galleryItems.length) % this.galleryItems.length;
+                    }
+                },
+
+                setFade(idx) {
+                    this.fadeIdx = idx;
+                },
+
+                toggleAutoplay() {
+                    this.autoplayEnabled = !this.autoplayEnabled;
+                    if (this.autoplayEnabled) {
+                        this.startAutoplay();
+                    } else if (this.autoplayTimer) {
+                        clearInterval(this.autoplayTimer);
+                        this.autoplayTimer = null;
+                    }
+                },
+
+                startAutoplay() {
+                    if (this.autoplayTimer) clearInterval(this.autoplayTimer);
+                    this.autoplayTimer = setInterval(() => {
+                        if (this.autoplayEnabled && !this.isLightboxOpen) {
+                            if (this.galleryEffect === 'carousel') {
+                                this.nextCarousel();
+                            } else if (this.galleryEffect === 'fade') {
+                                this.nextFade();
+                            }
+                        }
+                    }, 4000);
+                },
+
+                // Lightbox state & interactive zoom
+                isLightboxOpen: false,
+                activePhoto: '',
+                activeCaption: '',
+                lightboxZoom: 1.0,
+
+                openLightbox(url, caption) {
+                    this.activePhoto = url;
+                    this.activeCaption = caption;
+                    this.lightboxZoom = 1.0;
+                    const idx = this.galleryItems.findIndex(p => p.url === url);
+                    this.activeLightboxIdx = idx !== -1 ? idx : 0;
+                    this.isLightboxOpen = true;
+                },
+
+                lightboxNext() {
+                    if (this.galleryItems.length === 0) return;
+                    this.activeLightboxIdx = (this.activeLightboxIdx + 1) % this.galleryItems.length;
+                    this.activePhoto = this.galleryItems[this.activeLightboxIdx].url;
+                    this.activeCaption = this.galleryItems[this.activeLightboxIdx].caption;
+                    this.lightboxZoom = 1.0;
+                },
+
+                lightboxPrev() {
+                    if (this.galleryItems.length === 0) return;
+                    this.activeLightboxIdx = (this.activeLightboxIdx - 1 + this.galleryItems.length) % this.galleryItems.length;
+                    this.activePhoto = this.galleryItems[this.activeLightboxIdx].url;
+                    this.activeCaption = this.galleryItems[this.activeLightboxIdx].caption;
+                    this.lightboxZoom = 1.0;
+                },
+
+                zoomInLightbox() {
+                    this.lightboxZoom = Math.min(3.0, +(this.lightboxZoom + 0.5).toFixed(1));
+                },
+
+                zoomOutLightbox() {
+                    this.lightboxZoom = Math.max(1.0, +(this.lightboxZoom - 0.5).toFixed(1));
+                },
+
+                resetLightboxZoom() {
+                    this.lightboxZoom = 1.0;
+                },
+
+                toggleLightboxZoom() {
+                    this.lightboxZoom = this.lightboxZoom > 1.0 ? 1.0 : 2.0;
+                },
+
+                // RSVP form data
+                rsvpData: {
+                    guest_name: '{{ guest_name|escapejs }}',
+                    is_attending: '{% if guest_obj and guest_obj.is_attending is not None %}{% if guest_obj.is_attending %}yes{% else %}no{% endif %}{% else %}yes{% endif %}',
+                    actual_pax: '{{ guest_obj.actual_pax|default:1 }}',
+                    notes: '{{ guest_obj.notes|default:""|escapejs }}',
+                },
+
+                // New wish form data
+                newWish: {
+                    sender_name: '{{ guest_name|escapejs }}',
+                    attendance_status: 'attending',
+                    message: '',
+                },
+
+                // Wishes list
+                wishList: [
+                    {% for wish in wishes %}
+                    {
+                        id: {{ wish.id }},
+                        sender_name: '{{ wish.sender_name|escapejs }}',
+                        status: '{{ wish.get_attendance_status_display|escapejs }}',
+                        message: '{{ wish.message|escapejs }}',
+                        created_at: '{{ wish.created_at|date:"M j, Y, g:i a" }}'
+                    },
+                    {% endfor %}
+                ],
+
+                // Countdown state
+                countdown: {
+                    days: '00',
+                    hours: '00',
+                    minutes: '00',
+                    seconds: '00'
+                },
+
+                init() {
+                    this.startCountdown(config.eventDate);
+                    if (this.galleryItems.length > 1) {
+                        this.startAutoplay();
+                    }
+                },
+
+                openInvitation() {
+                    this.isOpen = true;
+                    if (this.hasAudio) {
+                        this.playAudio();
+                    }
+                },
+
+                playAudio() {
+                    const audio = this.$refs.bgAudio;
+                    if (audio) {
+                        audio.play().then(() => {
+                            this.isPlaying = true;
+                        }).catch(() => {
+                            this.isPlaying = false;
+                        });
+                    }
+                },
+
+                toggleAudio() {
+                    const audio = this.$refs.bgAudio;
+                    if (!audio) return;
+                    if (this.isPlaying) {
+                        audio.pause();
+                        this.isPlaying = false;
+                    } else {
+                        audio.play();
+                        this.isPlaying = true;
+                    }
+                },
+
+                startCountdown(targetDateStr) {
+                    const target = new Date(targetDateStr).getTime();
+                    const update = () => {
+                        const now = new Date().getTime();
+                        const distance = target - now;
+
+                        if (distance <= 0) {
+                            this.countdown = { days: '00', hours: '00', minutes: '00', seconds: '00' };
+                            return;
+                        }
+
+                        const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+                        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+                        this.countdown.days = String(d).padStart(2, '0');
+                        this.countdown.hours = String(h).padStart(2, '0');
+                        this.countdown.minutes = String(m).padStart(2, '0');
+                        this.countdown.seconds = String(s).padStart(2, '0');
+                    };
+                    update();
+                    setInterval(update, 1000);
+                },
+
+                copyAccount(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.copied = true;
+                        setTimeout(() => { this.copied = false; }, 3000);
+                    });
+                },
+
+                submitRSVP() {
+                    this.isSubmittingRSVP = true;
+                    const formData = new FormData();
+                    formData.append('guest_name', this.rsvpData.guest_name);
+                    formData.append('is_attending', this.rsvpData.is_attending);
+                    formData.append('actual_pax', this.rsvpData.actual_pax);
+                    formData.append('notes', this.rsvpData.notes);
+
+                    fetch(config.rsvpUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.isSubmittingRSVP = false;
+                        if (data.success) {
+                            this.rsvpSubmitted = true;
+                            this.rsvpMessage = data.message;
+                        }
+                    })
+                    .catch(() => {
+                        this.isSubmittingRSVP = false;
+                        // Fallback message
+                        this.rsvpSubmitted = true;
+                        this.rsvpMessage = 'Thank you! Your response was received.';
+                    });
+                },
+
+                submitWish() {
+                    if (!this.newWish.sender_name || !this.newWish.message) return;
+                    this.isSubmittingWish = true;
+
+                    const formData = new FormData();
+                    formData.append('sender_name', this.newWish.sender_name);
+                    formData.append('attendance_status', this.newWish.attendance_status);
+                    formData.append('message', this.newWish.message);
+
+                    fetch(config.wishUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.isSubmittingWish = false;
+                        if (data.success && data.wish) {
+                            this.wishList.unshift(data.wish);
+                            this.newWish.message = '';
+                        }
+                    })
+                    .catch(() => {
+                        this.isSubmittingWish = false;
+                        this.wishList.unshift({
+                            id: Date.now(),
+                            sender_name: this.newWish.sender_name,
+                            status: this.newWish.attendance_status === 'attending' ? 'Attending' : 'Best Wishes',
+                            message: this.newWish.message,
+                            created_at: 'Just now'
+                        });
+                        this.newWish.message = '';
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

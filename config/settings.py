@@ -51,7 +51,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "core",
     "api",
+    "invitations",
 ]
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "invitations:dashboard"
+LOGOUT_REDIRECT_URL = "home"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -120,6 +125,11 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# Media files (User uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
