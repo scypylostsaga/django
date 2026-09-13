@@ -107,7 +107,8 @@ def invitation_detail_view(request, slug):
     """Creator overview for an invitation: schedules, gallery, guests, wishes, and shareable links."""
     invitation = get_object_or_404(Invitation, slug=slug, user=request.user)
     schedules = invitation.schedules.all()
-    gallery_photos = invitation.gallery_photos.all()
+    gallery_photos = invitation.get_all_gallery_photos()
+    db_gallery_photos = invitation.gallery_photos.all()
     guests = invitation.guests.all()
     wishes = invitation.wishes.all()
 
@@ -128,6 +129,7 @@ def invitation_detail_view(request, slug):
         "invitation": invitation,
         "schedules": schedules,
         "gallery_photos": gallery_photos,
+        "db_gallery_photos": db_gallery_photos,
         "guests": guests,
         "wishes": wishes,
         "attending_count": attending_count,
@@ -193,7 +195,8 @@ def gallery_photo_delete_view(request, slug, photo_id):
     """Delete a photo from the gallery."""
     invitation = get_object_or_404(Invitation, slug=slug, user=request.user)
     photo = get_object_or_404(GalleryPhoto, id=photo_id, invitation=invitation)
-    photo.image.delete(save=False)
+    if photo.image:
+        photo.image.delete(save=False)
     photo.delete()
     messages.success(request, "Photo removed from gallery.")
     return redirect("invitations:invitation_detail", slug=invitation.slug)
@@ -212,6 +215,47 @@ def gallery_effect_update_view(request, slug):
         messages.success(request, f"Gallery effect updated to '{invitation.get_gallery_effect_display()}'.")
     else:
         messages.error(request, "Invalid gallery effect selected.")
+    return redirect("invitations:invitation_detail", slug=invitation.slug)
+
+
+@login_required
+@require_POST
+def gallery_folder_sync_view(request, slug):
+    """Sync all photos from the Google Drive folder into GalleryPhoto records."""
+    from .gdrive import fetch_photos_from_gdrive_folder
+
+    invitation = get_object_or_404(Invitation, slug=slug, user=request.user)
+    folder_url = request.POST.get("gallery_folder_url", "").strip() or invitation.gallery_folder_url
+    if not folder_url:
+        messages.error(request, "Please provide a Google Drive folder URL.")
+        return redirect("invitations:invitation_detail", slug=invitation.slug)
+
+    if folder_url != invitation.gallery_folder_url:
+        invitation.gallery_folder_url = folder_url
+        invitation.save(update_fields=["gallery_folder_url"])
+
+    photos = fetch_photos_from_gdrive_folder(folder_url)
+    if not photos:
+        messages.warning(
+            request,
+            "Could not discover photos in this Google Drive folder. "
+            "Please ensure the folder's General Access is set to 'Anyone with the link can view'."
+        )
+        return redirect("invitations:invitation_detail", slug=invitation.slug)
+
+    created_count = 0
+    existing_urls = set(invitation.gallery_photos.values_list("image_url", flat=True))
+    for item in photos:
+        url = item.get("url")
+        if url and url not in existing_urls:
+            GalleryPhoto.objects.create(
+                invitation=invitation,
+                image_url=url,
+                caption=item.get("caption", ""),
+            )
+            created_count += 1
+
+    messages.success(request, f"Successfully imported {created_count} photos from Google Drive folder!")
     return redirect("invitations:invitation_detail", slug=invitation.slug)
 
 
@@ -276,7 +320,7 @@ def public_invitation_view(request, slug):
         guest_obj = invitation.guests.filter(name__iexact=guest_name).first()
 
     schedules = invitation.schedules.all()
-    gallery_photos = invitation.gallery_photos.all()
+    gallery_photos = invitation.get_all_gallery_photos()
     wishes = invitation.wishes.all()[:50]
 
     # Prepopulate RSVP form

@@ -187,7 +187,8 @@
 
     <!-- Audio Element -->
     {% if invitation.get_audio_url %}
-    <audio x-ref="bgAudio" loop preload="auto">
+    <audio x-ref="bgAudio" loop preload="auto" src="{{ invitation.get_audio_url }}">
+        <source src="{{ invitation.get_audio_url }}" type="audio/mpeg">
         <source src="{{ invitation.get_audio_url }}" type="audio/mp3">
     </audio>
     {% endif %}
@@ -545,11 +546,11 @@
             <div x-show="galleryEffect === 'grid'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="grid grid-cols-2 gap-3">
                 {% for photo in gallery_photos %}
                 <div 
-                    @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                    @click="openLightbox('{{ photo.get_image_url }}', '{{ photo.caption|default:''|escapejs }}')"
                     class="group relative rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-[4/5] bg-stone-100 cursor-pointer transform transition active:scale-95 hover:shadow-md"
                 >
                     <img 
-                        src="{{ photo.image.url }}" 
+                        src="{{ photo.get_image_url }}" 
                         alt="{{ photo.caption|default:'Gallery Image' }}" 
                         loading="lazy"
                         class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
@@ -571,11 +572,11 @@
                 >
                     {% for photo in gallery_photos %}
                     <div 
-                        @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                        @click="openLightbox('{{ photo.get_image_url }}', '{{ photo.caption|default:''|escapejs }}')"
                         class="shrink-0 w-[78%] sm:w-[60%] snap-center group relative rounded-2xl overflow-hidden shadow-sm border border-stone-200 aspect-[4/5] bg-stone-100 cursor-pointer transform transition active:scale-95"
                     >
                         <img 
-                            src="{{ photo.image.url }}" 
+                            src="{{ photo.get_image_url }}" 
                             alt="{{ photo.caption|default:'Gallery Image' }}" 
                             loading="lazy"
                             class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
@@ -699,10 +700,10 @@
                         <!-- Track Set 1 -->
                         {% for photo in gallery_photos %}
                         <div 
-                            @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                            @click="openLightbox('{{ photo.get_image_url }}', '{{ photo.caption|default:''|escapejs }}')"
                             class="shrink-0 w-44 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 relative cursor-pointer active:scale-95 transition"
                         >
-                            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
+                            <img src="{{ photo.get_image_url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
                             {% if photo.caption %}
                             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2.5 pt-5">
                                 <p class="text-[10px] text-white font-medium truncate">{{ photo.caption }}</p>
@@ -713,10 +714,10 @@
                         <!-- Duplicate Track Set 2 for infinite seamless loop -->
                         {% for photo in gallery_photos %}
                         <div 
-                            @click="openLightbox('{{ photo.image.url }}', '{{ photo.caption|default:''|escapejs }}')"
+                            @click="openLightbox('{{ photo.get_image_url }}', '{{ photo.caption|default:''|escapejs }}')"
                             class="shrink-0 w-44 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm border border-stone-200 bg-stone-100 relative cursor-pointer active:scale-95 transition"
                         >
-                            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
+                            <img src="{{ photo.get_image_url }}" alt="{{ photo.caption|default:'Gallery Image' }}" loading="lazy" class="w-full h-full object-cover">
                             {% if photo.caption %}
                             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2.5 pt-5">
                                 <p class="text-[10px] text-white font-medium truncate">{{ photo.caption }}</p>
@@ -1158,7 +1159,7 @@
                 galleryItems: [
                     {% for photo in gallery_photos %}
                     {
-                        url: '{{ photo.image.url }}',
+                        url: '{{ photo.get_image_url }}',
                         caption: '{{ photo.caption|default:""|escapejs }}'
                     },
                     {% endfor %}

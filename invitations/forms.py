@@ -11,6 +11,10 @@ class InvitationForm(forms.ModelForm):
         required=False,
         widget=forms.URLInput(attrs={"class": "form-input", "placeholder": "https://.../song.mp3 (or upload file above)"}),
     )
+    gallery_folder_url = forms.CharField(
+        required=False,
+        widget=forms.URLInput(attrs={"class": "form-input", "placeholder": "https://drive.google.com/drive/folders/... (optional)"}),
+    )
 
     class Meta:
         model = Invitation
@@ -32,6 +36,7 @@ class InvitationForm(forms.ModelForm):
             "font_family",
             "theme_style",
             "gallery_effect",
+            "gallery_folder_url",
             "gift_bank_name",
             "gift_account_number",
             "gift_account_name",
@@ -100,16 +105,41 @@ class InvitationForm(forms.ModelForm):
         val = (self.cleaned_data.get("theme_color") or "").strip()
         return val or "#b45309"
 
+    def clean_gallery_folder_url(self):
+        url = (self.cleaned_data.get("gallery_folder_url") or "").strip()
+        if not url:
+            return ""
+        if not url.startswith(("http://", "https://")):
+            raise forms.ValidationError("Enter a valid URL starting with http:// or https://")
+        return url
 
 
 class GalleryPhotoForm(forms.ModelForm):
     class Meta:
         model = GalleryPhoto
-        fields = ["image", "caption"]
+        fields = ["image", "image_url", "caption"]
         widgets = {
-            "image": forms.ClearableFileInput(attrs={"class": "form-file-input", "accept": "image/*", "required": "required"}),
+            "image": forms.ClearableFileInput(attrs={"class": "form-file-input", "accept": "image/*"}),
+            "image_url": forms.URLInput(attrs={"class": "form-input", "placeholder": "https://... or Google Drive photo link"}),
             "caption": forms.TextInput(attrs={"class": "form-input", "placeholder": "e.g. Pre-wedding moment, Reception dance, etc."}),
         }
+
+    def clean_image_url(self):
+        url = (self.cleaned_data.get("image_url") or "").strip()
+        if not url:
+            return ""
+        url = normalize_gdrive_url(url, media_type="image")
+        if not url.startswith(("http://", "https://")):
+            raise forms.ValidationError("Enter a valid URL starting with http:// or https://")
+        return url
+
+    def clean(self):
+        cleaned_data = super().clean()
+        image = cleaned_data.get("image")
+        image_url = cleaned_data.get("image_url")
+        if not image and not image_url:
+            raise forms.ValidationError("Please choose a photo file to upload or enter a photo URL.")
+        return cleaned_data
 
 
 class ScheduleForm(forms.ModelForm):

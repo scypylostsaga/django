@@ -100,7 +100,7 @@ class InvitationTestCase(TestCase):
         )
         self.assertEqual(
             self.invitation.get_audio_url,
-            "https://docs.google.com/uc?export=download&id=1a2B3c4D5e6F7g8H9i0JkLmNoP",
+            "https://docs.google.com/uc?export=open&id=1a2B3c4D5e6F7g8H9i0JkLmNoP",
         )
 
     def test_gallery_upload(self):
@@ -130,6 +130,50 @@ class InvitationTestCase(TestCase):
         self.assertEqual(public_resp.status_code, 200)
         self.assertContains(public_resp, "Our Photo Gallery")
         self.assertContains(public_resp, "Romantic sunset")
+
+    def test_gallery_photo_with_url(self):
+        from invitations.models import GalleryPhoto
+
+        self.client.login(username="testuser", password="password123")
+        response = self.client.post(
+            f"/invitations/{self.invitation.slug}/gallery/add/",
+            {
+                "image_url": "https://drive.google.com/file/d/1c244Qq5hbv8lwKhtjXTI5cjU7-3Bix8S/view?usp=drive_link",
+                "caption": "Ceremony Moment",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        photo = GalleryPhoto.objects.filter(invitation=self.invitation, caption="Ceremony Moment").first()
+        self.assertIsNotNone(photo)
+        self.assertEqual(photo.get_image_url, "https://lh3.googleusercontent.com/d/1c244Qq5hbv8lwKhtjXTI5cjU7-3Bix8S")
+
+    def test_gdrive_folder_and_sync(self):
+        from unittest.mock import patch
+        from invitations.gdrive import extract_gdrive_folder_id
+
+        folder_url = "https://drive.google.com/drive/folders/1a2B3c4D5e6F7g8H9i0JkLmNoP"
+        self.assertEqual(extract_gdrive_folder_id(folder_url), "1a2B3c4D5e6F7g8H9i0JkLmNoP")
+
+        # Mock folder fetching
+        mock_photos = [
+            {"id": "photo_1", "url": "https://lh3.googleusercontent.com/d/photo_1", "caption": "First Look"},
+            {"id": "photo_2", "url": "https://lh3.googleusercontent.com/d/photo_2", "caption": "Dance Floor"},
+        ]
+        with patch("invitations.gdrive.fetch_photos_from_gdrive_folder", return_value=mock_photos):
+            self.invitation.gallery_folder_url = folder_url
+            self.invitation.save()
+
+            all_photos = self.invitation.get_all_gallery_photos()
+            self.assertTrue(any(p["url"] == "https://lh3.googleusercontent.com/d/photo_1" for p in all_photos))
+
+            # Test sync endpoint
+            self.client.login(username="testuser", password="password123")
+            sync_resp = self.client.post(
+                f"/invitations/{self.invitation.slug}/gallery/sync-gdrive/",
+                {"gallery_folder_url": folder_url},
+            )
+            self.assertEqual(sync_resp.status_code, 302)
+            self.assertEqual(self.invitation.gallery_photos.filter(image_url__contains="photo_1").count(), 1)
 
     def test_auto_google_maps_generation(self):
         # Create schedule without map_url

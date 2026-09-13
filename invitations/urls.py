@@ -24,6 +24,7 @@ urlpatterns = [
     path("invitations/<slug:slug>/gallery/add/", views.gallery_photo_add_view, name="gallery_photo_add"),
     path("invitations/<slug:slug>/gallery/<int:photo_id>/delete/", views.gallery_photo_delete_view, name="gallery_photo_delete"),
     path("invitations/<slug:slug>/gallery/effect/", views.gallery_effect_update_view, name="gallery_effect_update"),
+    path("invitations/<slug:slug>/gallery/sync-gdrive/", views.gallery_folder_sync_view, name="gallery_folder_sync"),
     path("invitations/<slug:slug>/guests/add/", views.guest_add_view, name="guest_add"),
     path("invitations/<slug:slug>/guests/<int:guest_id>/delete/", views.guest_delete_view, name="guest_delete"),
 

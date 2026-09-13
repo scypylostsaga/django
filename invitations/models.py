@@ -22,7 +22,7 @@ def normalize_gdrive_url(url: str, media_type: str = "image") -> str:
             if media_type == "image":
                 return f"https://lh3.googleusercontent.com/d/{file_id}"
             elif media_type == "audio":
-                return f"https://docs.google.com/uc?export=download&id={file_id}"
+                return f"https://docs.google.com/uc?export=open&id={file_id}"
     return url
 
 
@@ -143,6 +143,11 @@ class Invitation(models.Model):
         blank=True,
         help_text="Visual layout and animation effect for the photo gallery",
     )
+    gallery_folder_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text="Public Google Drive folder link containing gallery photos",
+    )
     # Digital Envelope / Gift info
     gift_bank_name = models.CharField(max_length=100, blank=True, help_text="Bank or digital wallet name")
     gift_account_number = models.CharField(max_length=100, blank=True, help_text="Account/Phone number")
@@ -180,6 +185,43 @@ class Invitation(models.Model):
             return self.audio_file.url
         raw = self.audio_url or ""
         return normalize_gdrive_url(raw, media_type="audio")
+
+    def get_all_gallery_photos(self):
+        """
+        Returns unified list of gallery photo items:
+        [{'id': ..., 'url': ..., 'get_image_url': ..., 'caption': ...}, ...]
+        combining database GalleryPhoto records and any linked Google Drive folder.
+        """
+        from .gdrive import fetch_photos_from_gdrive_folder
+
+        photos = []
+        # 1. Existing GalleryPhoto database records
+        for item in self.gallery_photos.all():
+            img_url = item.get_image_url
+            if img_url:
+                photos.append({
+                    "id": item.id,
+                    "url": img_url,
+                    "get_image_url": img_url,
+                    "caption": item.caption,
+                    "is_db": True,
+                })
+
+        # 2. Photos from Google Drive folder (if configured)
+        if self.gallery_folder_url:
+            folder_photos = fetch_photos_from_gdrive_folder(self.gallery_folder_url)
+            for fp in folder_photos:
+                f_url = fp.get("url")
+                if f_url:
+                    photos.append({
+                        "id": fp.get("id"),
+                        "url": f_url,
+                        "get_image_url": f_url,
+                        "caption": fp.get("caption", ""),
+                        "is_db": False,
+                    })
+
+        return photos
 
     def save(self, *args, **kwargs):
         if self.cover_image_url:
@@ -314,7 +356,8 @@ class GalleryPhoto(models.Model):
         on_delete=models.CASCADE,
         related_name="gallery_photos",
     )
-    image = models.ImageField(upload_to="invitations/gallery/")
+    image = models.ImageField(upload_to="invitations/gallery/", blank=True, null=True)
+    image_url = models.URLField(max_length=500, blank=True, help_text="Direct image URL or Google Drive photo link")
     caption = models.CharField(max_length=150, blank=True, help_text="Optional photo caption")
     order = models.PositiveIntegerField(default=0, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -324,3 +367,10 @@ class GalleryPhoto(models.Model):
 
     def __str__(self):
         return f"Photo for {self.invitation.title} ({self.caption or 'Untitled'})"
+
+    @property
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        raw = self.image_url or ""
+        return normalize_gdrive_url(raw, media_type="image")
