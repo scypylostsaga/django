@@ -76,6 +76,19 @@
 
                         init() {
                             this.parseFocusPos();
+                            this.previewSrc = this.resolveMediaUrl(this.previewSrc);
+                        },
+
+                        resolveMediaUrl(url) {
+                            if (!url) return '';
+                            const cleaned = url.trim();
+                            if (cleaned.includes('drive.google.com') || cleaned.includes('docs.google.com')) {
+                                const m = cleaned.match(/(?:file\/d\/|id=)([a-zA-Z0-9_-]{20,})/);
+                                if (m && m[1]) {
+                                    return 'https://lh3.googleusercontent.com/d/' + m[1];
+                                }
+                            }
+                            return cleaned;
                         },
 
                         parseFocusPos() {
@@ -119,8 +132,9 @@
 
                         onUrlInput(val) {
                             this.urlInput = val;
-                            if (val && (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/'))) {
-                                this.previewSrc = val;
+                            const resolved = this.resolveMediaUrl(val);
+                            if (resolved && (resolved.startsWith('http://') || resolved.startsWith('https://') || resolved.startsWith('/'))) {
+                                this.previewSrc = resolved;
                             }
                         }
                     }"
@@ -165,13 +179,13 @@
                                 name="cover_image_url" 
                                 :value="urlInput" 
                                 @input="onUrlInput($event.target.value)" 
-                                placeholder="https://images.unsplash.com/... (optional)" 
+                                placeholder="https://drive.google.com/... or Unsplash URL" 
                                 class="form-input"
                             >
                             {% if form.cover_image_url.errors %}
                                 <p class="text-xs text-rose-600 mt-1 font-semibold">{{ form.cover_image_url.errors.0 }}</p>
                             {% endif %}
-                            <p class="text-[11px] text-stone-400 mt-1">If an image file is uploaded above, it will take precedence over the URL.</p>
+                            <p class="text-[11px] text-stone-500 mt-1">Direct image URLs or Google Drive sharing links are automatically detected and previewed. (If a photo is uploaded above, it takes precedence).</p>
                         </div>
                     </div>
 

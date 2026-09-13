@@ -1,5 +1,5 @@
 from django import forms
-from .models import Invitation, Schedule, Guest, Wish, GalleryPhoto
+from .models import Invitation, Schedule, Guest, Wish, GalleryPhoto, normalize_gdrive_url
 
 
 class InvitationForm(forms.ModelForm):
@@ -65,11 +65,11 @@ class InvitationForm(forms.ModelForm):
         url = (self.cleaned_data.get("cover_image_url") or "").strip()
         if not url:
             return ""
-        # If user uploaded a file or already has an uploaded file, ignore blob/media/local paths
+        # Auto-convert Google Drive links to direct image CDN links
+        url = normalize_gdrive_url(url, media_type="image")
         if url.startswith("blob:") or url.startswith("/media/"):
             return ""
         if not url.startswith(("http://", "https://")):
-            # If cover_image is uploaded or already exists on the instance, safely ignore invalid URL string
             if self.cleaned_data.get("cover_image") or (self.instance and getattr(self.instance, "cover_image", None)):
                 return ""
             raise forms.ValidationError("Enter a valid image URL starting with http:// or https://")
@@ -79,6 +79,8 @@ class InvitationForm(forms.ModelForm):
         url = (self.cleaned_data.get("audio_url") or "").strip()
         if not url:
             return ""
+        # Auto-convert Google Drive links to direct audio stream links
+        url = normalize_gdrive_url(url, media_type="audio")
         if url.startswith("blob:") or url.startswith("/media/"):
             return ""
         if not url.startswith(("http://", "https://")):

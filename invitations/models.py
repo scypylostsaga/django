@@ -5,6 +5,27 @@ from django.db import models
 from django.utils.text import slugify
 
 
+def normalize_gdrive_url(url: str, media_type: str = "image") -> str:
+    """
+    Transforms standard Google Drive file/view sharing links into direct CDN stream links.
+    e.g. https://drive.google.com/file/d/<FILE_ID>/view?usp=sharing
+    -> For images: https://lh3.googleusercontent.com/d/<FILE_ID>
+    -> For audio:  https://docs.google.com/uc?export=download&id=<FILE_ID>
+    """
+    if not url:
+        return ""
+    url = url.strip()
+    if ("drive.google.com" in url or "docs.google.com" in url) and ("file/d/" in url or "id=" in url):
+        match = re.search(r"(?:file/d/|id=)([a-zA-Z0-9_-]{20,})", url)
+        if match:
+            file_id = match.group(1)
+            if media_type == "image":
+                return f"https://lh3.googleusercontent.com/d/{file_id}"
+            elif media_type == "audio":
+                return f"https://docs.google.com/uc?export=download&id={file_id}"
+    return url
+
+
 class Invitation(models.Model):
     EVENT_TYPES = [
         ("wedding", "Wedding"),
@@ -145,7 +166,8 @@ class Invitation(models.Model):
     def get_cover_image_url(self):
         if self.cover_image:
             return self.cover_image.url
-        return self.cover_image_url or ""
+        raw = self.cover_image_url or ""
+        return normalize_gdrive_url(raw, media_type="image")
 
     @property
     def cover_zoom_scale(self):
@@ -156,9 +178,14 @@ class Invitation(models.Model):
     def get_audio_url(self):
         if self.audio_file:
             return self.audio_file.url
-        return self.audio_url or ""
+        raw = self.audio_url or ""
+        return normalize_gdrive_url(raw, media_type="audio")
 
     def save(self, *args, **kwargs):
+        if self.cover_image_url:
+            self.cover_image_url = normalize_gdrive_url(self.cover_image_url, media_type="image")
+        if self.audio_url:
+            self.audio_url = normalize_gdrive_url(self.audio_url, media_type="audio")
         if not self.slug:
             base_slug = slugify(self.title) or "invitation"
             slug = base_slug

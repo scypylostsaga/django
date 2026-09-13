@@ -88,6 +88,21 @@ class InvitationTestCase(TestCase):
         self.assertEqual(self.invitation.get_cover_image_url, self.invitation.cover_image_url)
         self.assertEqual(self.invitation.get_audio_url, "")
 
+    def test_gdrive_url_normalization(self):
+        # Test image conversion
+        self.invitation.cover_image_url = "https://drive.google.com/file/d/1c244Qq5hbv8lwKhtjXTI5cjU7-3Bix8S/view?usp=drive_link"
+        self.invitation.audio_url = "https://drive.google.com/file/d/1a2B3c4D5e6F7g8H9i0JkLmNoP/view?usp=sharing"
+        self.invitation.save()
+
+        self.assertEqual(
+            self.invitation.get_cover_image_url,
+            "https://lh3.googleusercontent.com/d/1c244Qq5hbv8lwKhtjXTI5cjU7-3Bix8S",
+        )
+        self.assertEqual(
+            self.invitation.get_audio_url,
+            "https://docs.google.com/uc?export=download&id=1a2B3c4D5e6F7g8H9i0JkLmNoP",
+        )
+
     def test_gallery_upload(self):
         from django.core.files.uploadedfile import SimpleUploadedFile
         import io
